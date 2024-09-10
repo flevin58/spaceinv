@@ -1,11 +1,10 @@
 use crate::alien::Alien;
-use crate::constants::{
-    ALIEN_COLUMNS, ALIEN_DOWN_DISTANCE, ALIEN_OFFSET_X, ALIEN_OFFSET_Y, ALIEN_ROWS, ALIEN_SIZE,
-    NUM_OBSTACLES, OBSTACLE_PADDING, OBSTACLE_WIDTH, WINDOW_BKG_COLOR,
-};
+use crate::constants::*;
+use crate::mysteryship::MysteryShip;
 use crate::spaceship::Spaceship;
 use crate::{laser::Laser, obstacle::Obstacle};
 
+use rand::Rng;
 use raylib::math::Vector2;
 use raylib::{
     consts::KeyboardKey::*,
@@ -19,6 +18,11 @@ pub struct Game<'a> {
     obstacles: Vec<Obstacle<'a>>,
     aliens: Vec<Alien>,
     aliens_direction: i32,
+    alien_lasers: Vec<Laser>,
+    time_alien_last_fired: f64,
+    mysteryship: MysteryShip,
+    mysteryship_spawn_interval: f64,
+    time_last_spawned: f64,
 }
 
 impl<'a> Game<'a> {
@@ -29,6 +33,12 @@ impl<'a> Game<'a> {
             obstacles: Vec::new(),
             aliens: Vec::new(),
             aliens_direction: 1,
+            alien_lasers: Vec::new(),
+            time_alien_last_fired: 0.,
+            mysteryship: MysteryShip::new(rl, thread),
+            mysteryship_spawn_interval: rand::thread_rng()
+                .gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL),
+            time_last_spawned: 0.,
         };
 
         // create the ostacles
@@ -100,20 +110,56 @@ impl<'a> Game<'a> {
         }
     }
 
+    pub fn aliens_shoot_laser(&mut self, rl: &mut RaylibHandle) {
+        let current_time = rl.get_time();
+        if current_time - self.time_alien_last_fired >= ALIEN_LASER_INTERVAL
+            && !self.aliens.is_empty()
+        {
+            let random_index: usize = rand::thread_rng().gen_range(0..self.aliens.len());
+            let alien = &self.aliens[random_index];
+            let laser_pos = alien.get_laser_position();
+            self.alien_lasers
+                .push(Laser::new(laser_pos, ALIEN_LASER_SPEED));
+            self.time_alien_last_fired = rl.get_time();
+        }
+    }
+
     pub fn update(&mut self, rl: &mut RaylibHandle) {
         // update the spaceship (currently does nothing)
         self.spaceship.update(rl);
 
-        // update all lasers
+        // update all spaceship lasers
         for laser in self.lasers.iter_mut() {
             laser.update(rl);
         }
 
-        // remove all inactive lasers
+        // remove all inactive spaceship lasers
         self.lasers.retain(|elem| elem.is_active());
 
         // update the aliens
         self.move_aliens(rl);
+
+        // create alien lasers
+        self.aliens_shoot_laser(rl);
+
+        // update alien lasers
+        for laser in self.alien_lasers.iter_mut() {
+            laser.update(rl);
+        }
+
+        // remove all inactive alien lasers
+        self.alien_lasers.retain(|elem| elem.is_active());
+
+        // update the mystery ship
+        let current_time = rl.get_time();
+        if current_time - self.time_last_spawned > self.mysteryship_spawn_interval {
+            self.mysteryship.spawn(rl);
+            self.time_last_spawned = rl.get_time();
+            self.mysteryship_spawn_interval =
+                rand::thread_rng().gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL)
+        }
+
+        self.mysteryship.update(rl);
     }
 
     pub fn draw(&mut self, d: &mut RaylibDrawHandle) {
@@ -129,5 +175,11 @@ impl<'a> Game<'a> {
         for alien in self.aliens.iter() {
             alien.draw(d);
         }
+
+        for laser in self.alien_lasers.iter_mut() {
+            laser.draw(d);
+        }
+
+        self.mysteryship.draw(d);
     }
 }

@@ -3,6 +3,7 @@ mod block;
 mod constants;
 mod game;
 mod laser;
+mod mysteryship;
 mod obstacle;
 mod spaceship;
 

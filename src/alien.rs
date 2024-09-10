@@ -45,6 +45,12 @@ impl Alien {
         }
     }
 
+    pub fn get_laser_position(&self) -> Vector2 {
+        let laser_x = self.position.x + self.image.width.as_f32() / 2.;
+        let laser_y = self.position.y + self.image.height.as_f32();
+        Vector2::new(laser_x, laser_y)
+    }
+
     pub fn move_down(&mut self, distance: usize) {
         self.position.y += distance as f32;
     }

@@ -24,9 +24,7 @@ pub struct Spaceship {
 
 impl Spaceship {
     pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
-        let ship_texture = rl
-            .load_texture(&thread, "assets/sprites/spaceship.png")
-            .unwrap();
+        let ship_texture = rl.load_texture(&thread, SPACESHIP_TEXTURE).unwrap();
 
         let ship_x = (rl.get_screen_width().as_f32() - ship_texture.width.as_f32()) / 2.;
         let ship_y = rl.get_screen_height().as_f32() - ship_texture.height.as_f32();

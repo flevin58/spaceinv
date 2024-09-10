@@ -32,7 +32,16 @@ pub const LASER_COLOR: Color = Color {
 
 // SPACESHIP CONSTANTS
 
+pub const SPACESHIP_TEXTURE: &str = "assets/sprites/spaceship.png";
 pub const SPACESHIP_SPEED: f32 = 7.;
+
+// MYSTERYSHIP CONSTANTS
+
+pub const MYSTERYSHIP_TEXTURE: &str = "assets/sprites/mystery.png";
+pub const MYSTERYSHIP_SPEED: f32 = 3.;
+pub const MYSTERYSHIP_YPOS: f32 = 90.;
+pub const MYSTERYSHIP_MIN_INTERVAL: f64 = 10.;
+pub const MYSTERYSHIP_MAX_INTERVAL: f64 = 20.;
 
 // BLOCK CONSTANTS
 
@@ -86,6 +95,8 @@ pub const ALIEN_SIZE: usize = 55;
 pub const ALIEN_OFFSET_X: usize = 75;
 pub const ALIEN_OFFSET_Y: usize = 110;
 pub const ALIEN_DOWN_DISTANCE: usize = 4;
+pub const ALIEN_LASER_SPEED: f32 = 6.;
+pub const ALIEN_LASER_INTERVAL: f64 = 0.35;
 
 pub const ALIEN1_TEXTURE: &str = "assets/sprites/alien_1.png";
 pub const ALIEN2_TEXTURE: &str = "assets/sprites/alien_2.png";
