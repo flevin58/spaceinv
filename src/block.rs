@@ -7,11 +7,23 @@ use raylib::{
 
 pub struct Block {
     position: Vector2,
+    active: bool,
 }
 
 impl Block {
     pub fn new(position: Vector2) -> Block {
-        Block { position }
+        Block {
+            position,
+            active: true,
+        }
+    }
+
+    pub fn erase(&mut self) {
+        self.active = false;
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {

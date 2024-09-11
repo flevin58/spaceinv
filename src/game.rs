@@ -13,10 +13,10 @@ use raylib::{
     RaylibHandle, RaylibThread,
 };
 
-pub struct Game<'a> {
+pub struct Game {
     spaceship: Spaceship,
     lasers: Vec<Laser>,
-    obstacles: Vec<Obstacle<'a>>,
+    obstacles: Vec<Obstacle>,
     aliens: Vec<Alien>,
     aliens_direction: i32,
     alien_lasers: Vec<Laser>,
@@ -26,7 +26,7 @@ pub struct Game<'a> {
     time_last_spawned: f64,
 }
 
-impl<'a> Game<'a> {
+impl Game {
     pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
         let mut game = Game {
             spaceship: Spaceship::new(rl, thread),
@@ -128,6 +128,7 @@ impl<'a> Game<'a> {
     pub fn check_for_collisions(&mut self, rl: &mut RaylibHandle) {
         // spaceship lasers
         for laser in self.lasers.iter_mut() {
+            // check against aliens
             for alien in self.aliens.iter_mut() {
                 unsafe {
                     if alien.is_alive()
@@ -135,6 +136,17 @@ impl<'a> Game<'a> {
                     {
                         alien.erase();
                         laser.erase();
+                    }
+                }
+            }
+            // check against obstacles
+            for obstacle in self.obstacles.iter_mut() {
+                for block in obstacle.blocks.iter_mut() {
+                    unsafe {
+                        if raylib::ffi::CheckCollisionRecs(block.get_rect(), laser.get_rect()) {
+                            block.erase();
+                            laser.erase();
+                        }
                     }
                 }
             }
@@ -152,6 +164,14 @@ impl<'a> Game<'a> {
 
         // remove all inactive spaceship lasers
         self.lasers.retain(|elem| elem.is_active());
+
+        // remove all inactive blocks
+        for obstacle in self.obstacles.iter_mut() {
+            obstacle.remove_inactive_blocks();
+        }
+
+        // remove all inactive aliens
+        self.aliens.retain(|elem| elem.is_alive());
 
         // update the aliens
         self.move_aliens(rl);

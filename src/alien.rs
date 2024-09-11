@@ -71,9 +71,7 @@ impl Alien {
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        if self.alive {
-            d.draw_texture_v(&self.image, self.position, Color::WHITE);
-        }
+        d.draw_texture_v(&self.image, self.position, Color::WHITE);
     }
 
     pub fn get_rect(&self) -> Rectangle {

@@ -1,23 +1,22 @@
+use std::collections::btree_map::IterMut;
+
 use crate::block::Block;
 use crate::constants::*;
 use raylib::prelude::*;
 
-pub struct Obstacle<'a> {
-    // position: Vector2,
-    blocks: Vec<Block>,
-    grid: [&'a [u8; GRID_WIDTH]; GRID_HEIGHT],
+pub struct Obstacle {
+    pub blocks: Vec<Block>,
 }
 
-impl<'a> Obstacle<'a> {
-    pub fn new(x: usize, y: usize) -> Obstacle<'a> {
+impl Obstacle {
+    pub fn new(x: usize, y: usize) -> Obstacle {
         let mut obs = Obstacle {
             // position: Vector2::new(x, y),
             blocks: Vec::new(),
-            grid: OBSTACLE_GRID,
         };
         for row in 0..GRID_HEIGHT {
             for col in 0..GRID_WIDTH {
-                if obs.grid[row][col] == 1 {
+                if OBSTACLE_GRID[row][col] == 1 {
                     let pos_x = x + col * BLOCK_SIDE;
                     let pos_y = y + row * BLOCK_SIDE;
                     let block = Block::new(Vector2 {
@@ -30,6 +29,10 @@ impl<'a> Obstacle<'a> {
         }
 
         obs
+    }
+
+    pub fn remove_inactive_blocks(&mut self) {
+        self.blocks.retain(|elem| elem.is_active());
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
