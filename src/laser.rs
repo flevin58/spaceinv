@@ -3,7 +3,6 @@ use crate::constants::*;
 use raylib::{
     core::math::Vector2,
     ffi::Rectangle,
-    misc::AsF32,
     prelude::{RaylibDraw, RaylibDrawHandle},
     RaylibHandle,
 };
@@ -34,7 +33,8 @@ impl Laser {
     pub fn update(&mut self, rl: &mut RaylibHandle) {
         if self.active {
             self.position.y += self.speed;
-            if self.position.y > rl.get_screen_height().as_f32() || self.position.y < 0. {
+            if self.position.y > (rl.get_screen_height() - OFFSETY) as f32 || self.position.y < 25.
+            {
                 self.active = false;
             }
         }

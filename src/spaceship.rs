@@ -28,10 +28,10 @@ impl Spaceship {
         let ship_texture = rl.load_texture(&thread, SPACESHIP_TEXTURE).unwrap();
 
         let ship_x = (rl.get_screen_width().as_f32() - ship_texture.width.as_f32()) / 2.;
-        let ship_y = rl.get_screen_height().as_f32() - ship_texture.height.as_f32();
+        let ship_y = (rl.get_screen_height() - ship_texture.height - SPACESHIP_YOFFSET) as f32;
 
-        let ship_min = 0.;
-        let ship_max = rl.get_screen_width().as_f32() - ship_texture.width.as_f32();
+        let ship_min = SPACESHIP_XOFFSET as f32;
+        let ship_max = (rl.get_screen_width() - ship_texture.width - SPACESHIP_XOFFSET) as f32;
 
         Spaceship {
             image: ship_texture,
@@ -47,11 +47,24 @@ impl Spaceship {
         }
     }
 
+    pub fn reset(&mut self, rl: &RaylibHandle) {
+        // put back the spacehip at the center
+        let ship_x = (rl.get_screen_width() - self.image.width) / 2;
+        let ship_y = rl.get_screen_height() - self.image.height - SPACESHIP_YOFFSET;
+        self.position.x = ship_x as f32;
+        self.position.y = ship_y as f32;
+    }
+
     // currently unused
     pub fn update(&mut self, _rl: &mut RaylibHandle) {}
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
         d.draw_texture_v(&self.image, self.position, Color::WHITE);
+    }
+
+    pub fn draw_at(&self, d: &mut RaylibDrawHandle, x: f32, y: f32) {
+        let pos = Vector2::new(x, y);
+        d.draw_texture_v(&self.image, pos, Color::WHITE);
     }
 
     pub fn move_left(&mut self) {

@@ -11,9 +11,10 @@ use raylib::{
 use crate::constants::*;
 
 pub struct Alien {
-    position: Vector2,
     image: Texture2D,
+    position: Vector2,
     active: bool,
+    score: usize,
 }
 
 impl Alien {
@@ -25,15 +26,22 @@ impl Alien {
     ) -> Self {
         let asset_files: [&str; 3] = [ALIEN1_TEXTURE, ALIEN2_TEXTURE, ALIEN3_TEXTURE];
 
+        // raylib::ffi::LoadImageFromMemory(".png", buffer, buffer_size);
+
         Alien {
             position,
             image: rl.load_texture(&thread, asset_files[kind - 1]).unwrap(),
             active: true,
+            score: ALIEN_SCORES[kind - 1],
         }
     }
 
+    pub fn get_score(&self) -> usize {
+        self.score
+    }
+
     pub fn has_overflowed_right(&self, rl: &RaylibHandle) -> bool {
-        if self.position.x as i32 + self.image.width > rl.get_screen_width() {
+        if self.position.x as i32 + self.image.width > rl.get_screen_width() - OFFSETX / 2 {
             true
         } else {
             false
@@ -41,7 +49,7 @@ impl Alien {
     }
 
     pub fn has_overflowed_left(&self) -> bool {
-        if self.position.x < 0. {
+        if (self.position.x as i32) < OFFSETX / 2 {
             true
         } else {
             false

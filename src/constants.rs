@@ -1,11 +1,16 @@
 use raylib::color::Color;
+use raylib::ffi::Rectangle;
 use raylib::math::Vector2;
 
 // GAME CONSTANTS
 
 pub const WINDOW_WIDTH: i32 = 750;
 pub const WINDOW_HEIGHT: i32 = 700;
+pub const OFFSETX: i32 = 50;
+pub const OFFSETY: i32 = 100;
 pub const WINDOW_TITLE: &str = "Rust Space Invaders";
+
+pub const PLAYER_LIVES: usize = 3;
 
 pub const WINDOW_BKG_COLOR: Color = Color {
     r: 29,
@@ -14,7 +19,45 @@ pub const WINDOW_BKG_COLOR: Color = Color {
     a: 255,
 };
 
-pub const PLAYER_LIVES: usize = 3;
+// WINDOWS GUI CONSTANTS
+
+pub const FONT_SIZE: i32 = 34;
+pub const FONT_SPACING: f32 = 2.;
+
+pub const GUI_LIVEIMG_X: f32 = 50.;
+pub const GUI_LIVEIMG_Y: f32 = 745.;
+pub const GUI_LIVEIMG_INC: f32 = 50.;
+
+pub const LEVEL_POS: Vector2 = Vector2 { x: 570., y: 740. };
+
+pub const FRAME_ROUNDNESS: f32 = 0.18;
+pub const FRAME_THICKNESS: f32 = 2.;
+pub const FRAME_SEGMENTS: i32 = 20;
+const FRAME_PADDING: f32 = 10.;
+const FRAME_SIDE: f32 = (WINDOW_WIDTH + OFFSETX) as f32 - FRAME_PADDING;
+
+pub const FRAME_RECT: Rectangle = Rectangle {
+    x: FRAME_PADDING,
+    y: FRAME_PADDING,
+    width: FRAME_SIDE - FRAME_PADDING,
+    height: FRAME_SIDE - FRAME_PADDING,
+};
+
+pub const GUI_LINE_Y: f32 = 730.;
+pub const GUI_LINE_X1: f32 = 25.;
+pub const GUI_LINE_X2: f32 = 775.;
+pub const GUI_LINE_THICKNESS: f32 = 2.;
+pub const GUI_SCORE_TEXT_POS: Vector2 = Vector2 { x: 50., y: 15. };
+pub const GUI_SCORE_VALUE_POS: Vector2 = Vector2 { x: 50., y: 40. };
+pub const GUI_HIGH_SCORE_TEXT_POS: Vector2 = Vector2 { x: 570., y: 15. };
+pub const GUI_HIGH_SCORE_VALUE_POS: Vector2 = Vector2 { x: 655., y: 40. };
+
+pub const FRAME_COLOR: Color = Color {
+    r: 243,
+    g: 216,
+    b: 63,
+    a: 255,
+};
 
 // LASER CONSTANTS
 
@@ -35,16 +78,19 @@ pub const LASER_COLOR: Color = Color {
 
 // SPACESHIP CONSTANTS
 
-pub const SPACESHIP_TEXTURE: &str = "assets/sprites/spaceship.png";
+pub const SPACESHIP_TEXTURE: &str = "assets/images/spaceship.png";
 pub const SPACESHIP_SPEED: f32 = 7.;
+pub const SPACESHIP_YOFFSET: i32 = OFFSETY;
+pub const SPACESHIP_XOFFSET: i32 = OFFSETX / 2;
 
 // MYSTERYSHIP CONSTANTS
 
-pub const MYSTERYSHIP_TEXTURE: &str = "assets/sprites/mystery.png";
+pub const MYSTERYSHIP_TEXTURE: &str = "assets/images/mystery.png";
 pub const MYSTERYSHIP_SPEED: f32 = 3.;
 pub const MYSTERYSHIP_YPOS: f32 = 90.;
 pub const MYSTERYSHIP_MIN_INTERVAL: f64 = 10.;
 pub const MYSTERYSHIP_MAX_INTERVAL: f64 = 20.;
+pub const MYSTERYSHIP_SCORE: usize = 500;
 
 // BLOCK CONSTANTS
 
@@ -92,6 +138,8 @@ pub const OBSTACLE_GRID: [&[u8; GRID_WIDTH]; GRID_HEIGHT ] = [
 
 // ALIENS CONSTANTS
 
+pub const ALIEN_SCORES: [usize; 3] = [100, 200, 300];
+
 pub const ALIEN_ROWS: usize = 5;
 pub const ALIEN_COLUMNS: usize = 11;
 pub const ALIEN_SIZE: usize = 55;
@@ -101,6 +149,6 @@ pub const ALIEN_DOWN_DISTANCE: usize = 4;
 pub const ALIEN_LASER_SPEED: f32 = 6.;
 pub const ALIEN_LASER_INTERVAL: f64 = 0.35;
 
-pub const ALIEN1_TEXTURE: &str = "assets/sprites/alien_1.png";
-pub const ALIEN2_TEXTURE: &str = "assets/sprites/alien_2.png";
-pub const ALIEN3_TEXTURE: &str = "assets/sprites/alien_3.png";
+pub const ALIEN1_TEXTURE: &str = "assets/images/alien_1.png";
+pub const ALIEN2_TEXTURE: &str = "assets/images/alien_2.png";
+pub const ALIEN3_TEXTURE: &str = "assets/images/alien_3.png";

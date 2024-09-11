@@ -1,3 +1,7 @@
+//! A space invaders game in Rust an Raylib
+//! Based on this video: https://youtu.be/TGo3Oxdpr5o
+//!
+//! Rust implementation by Fernando Levin (flevin58@gmail.com)
 mod alien;
 mod block;
 mod constants;
@@ -13,7 +17,7 @@ use raylib::ffi::TraceLogLevel::*;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
-        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
+        .size(WINDOW_WIDTH + OFFSETX, WINDOW_HEIGHT + OFFSETY)
         .title(WINDOW_TITLE)
         .vsync()
         .build();
@@ -25,7 +29,7 @@ fn main() {
     let mut game = Game::new(&mut rl, &thread);
 
     while !rl.window_should_close() {
-        game.handle_input(&mut rl);
+        game.handle_input(&mut rl, &thread);
         game.update(&mut rl);
         let mut d = rl.begin_drawing(&thread);
         game.draw(&mut d);

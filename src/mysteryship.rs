@@ -37,7 +37,9 @@ impl MysteryShip {
     pub fn update(&mut self, rl: &mut RaylibHandle) {
         if self.active {
             self.position.x += self.speed;
-            if self.position.x > rl.get_screen_width().as_f32() || self.position.x < 0. {
+            if self.position.x > (rl.get_screen_width() - self.image.width - OFFSETX / 2) as f32
+                || self.position.x < (OFFSETX / 2) as f32
+            {
                 self.active = false;
             }
         }
@@ -53,10 +55,10 @@ impl MysteryShip {
         let side: i32 = rand::thread_rng().gen_range(0..1);
         self.position.y = MYSTERYSHIP_YPOS;
         if side == 0 {
-            self.position.x = 0.;
+            self.position.x = (OFFSETX / 2) as f32;
             self.speed = MYSTERYSHIP_SPEED;
         } else {
-            self.position.x = rl.get_screen_width().as_f32() - self.image.width.as_f32();
+            self.position.x = (rl.get_screen_width() - self.image.width - OFFSETX / 2) as f32;
             self.speed = -MYSTERYSHIP_SPEED;
         }
         self.active = true;
