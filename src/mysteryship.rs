@@ -1,6 +1,15 @@
 use crate::constants::*;
 use rand::Rng;
-use raylib::prelude::*;
+
+use raylib::{
+    color::Color,
+    core::math::Vector2,
+    ffi::Rectangle,
+    misc::AsF32,
+    prelude::{RaylibDraw, RaylibDrawHandle},
+    texture::Texture2D,
+    RaylibHandle, RaylibThread,
+};
 
 pub struct MysteryShip {
     image: Texture2D,
@@ -47,5 +56,22 @@ impl MysteryShip {
             self.speed = -MYSTERYSHIP_SPEED;
         }
         self.alive = true;
+    }
+
+    pub fn get_rect(&self) -> Rectangle {
+        let mut width: f32 = 0.;
+        let mut height: f32 = 0.;
+
+        if self.alive {
+            width = self.image.width.as_f32();
+            height = self.image.height.as_f32();
+        }
+
+        Rectangle {
+            x: self.position.x,
+            y: self.position.y,
+            width,
+            height,
+        }
     }
 }

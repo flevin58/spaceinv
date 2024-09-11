@@ -1,6 +1,7 @@
 use raylib::{
     color::Color,
     core::math::Vector2,
+    ffi::Rectangle,
     misc::AsF32,
     prelude::{RaylibDraw, RaylibDrawHandle},
     texture::Texture2D,
@@ -78,6 +79,15 @@ impl Spaceship {
             Some(Laser::new(laser_pos, LASER_SPEED))
         } else {
             None
+        }
+    }
+
+    pub fn get_rect(&self) -> Rectangle {
+        Rectangle {
+            x: self.position.x,
+            y: self.position.y,
+            width: self.image.width.as_f32(),
+            height: self.image.height.as_f32(),
         }
     }
 }

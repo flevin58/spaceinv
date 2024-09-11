@@ -1,6 +1,7 @@
 use raylib::{
     color::Color,
     core::math::Vector2,
+    ffi::Rectangle,
     misc::AsF32,
     prelude::{RaylibDraw, RaylibDrawHandle},
     texture::Texture2D,
@@ -12,6 +13,7 @@ use crate::constants::*;
 pub struct Alien {
     position: Vector2,
     image: Texture2D,
+    alive: bool,
 }
 
 impl Alien {
@@ -26,6 +28,7 @@ impl Alien {
         Alien {
             position,
             image: rl.load_texture(&thread, asset_files[kind - 1]).unwrap(),
+            alive: true,
         }
     }
 
@@ -55,11 +58,30 @@ impl Alien {
         self.position.y += distance as f32;
     }
 
+    pub fn erase(&mut self) {
+        self.alive = false;
+    }
+
+    pub fn is_alive(&self) -> bool {
+        self.alive
+    }
+
     pub fn update(&mut self, _rl: &mut RaylibHandle, direction: i32) {
         self.position.x += direction.as_f32();
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        d.draw_texture_v(&self.image, self.position, Color::WHITE);
+        if self.alive {
+            d.draw_texture_v(&self.image, self.position, Color::WHITE);
+        }
+    }
+
+    pub fn get_rect(&self) -> Rectangle {
+        Rectangle {
+            x: self.position.x,
+            y: self.position.y,
+            width: self.image.width.as_f32(),
+            height: self.image.height.as_f32(),
+        }
     }
 }

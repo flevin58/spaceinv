@@ -18,7 +18,7 @@ pub const WINDOW_BKG_COLOR: Color = Color {
 pub const LASER_TIME: f64 = 0.35;
 pub const LASER_SPEED: f32 = -6.;
 pub const LASER_WIDTH: f32 = 4.;
-pub const LASER_HEIGHT: f32 = 5.;
+pub const LASER_HEIGHT: f32 = 15.;
 pub const LASER_SIZE: Vector2 = Vector2 {
     x: LASER_WIDTH,
     y: LASER_HEIGHT,

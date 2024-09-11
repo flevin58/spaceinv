@@ -5,9 +5,10 @@ use crate::spaceship::Spaceship;
 use crate::{laser::Laser, obstacle::Obstacle};
 
 use rand::Rng;
-use raylib::math::Vector2;
+
 use raylib::{
-    consts::KeyboardKey::*,
+    core::math::Vector2,
+    ffi::{KeyboardKey::*, Rectangle},
     prelude::{RaylibDraw, RaylibDrawHandle},
     RaylibHandle, RaylibThread,
 };
@@ -124,6 +125,22 @@ impl<'a> Game<'a> {
         }
     }
 
+    pub fn check_for_collisions(&mut self, rl: &mut RaylibHandle) {
+        // spaceship lasers
+        for laser in self.lasers.iter_mut() {
+            for alien in self.aliens.iter_mut() {
+                unsafe {
+                    if alien.is_alive()
+                        && raylib::ffi::CheckCollisionRecs(alien.get_rect(), laser.get_rect())
+                    {
+                        alien.erase();
+                        laser.erase();
+                    }
+                }
+            }
+        }
+    }
+
     pub fn update(&mut self, rl: &mut RaylibHandle) {
         // update the spaceship (currently does nothing)
         self.spaceship.update(rl);
@@ -160,6 +177,8 @@ impl<'a> Game<'a> {
         }
 
         self.mysteryship.update(rl);
+
+        self.check_for_collisions(rl);
     }
 
     pub fn draw(&mut self, d: &mut RaylibDrawHandle) {
