@@ -1,14 +1,15 @@
 use crate::alien::Alien;
 use crate::constants::*;
+use crate::laser::Laser;
 use crate::mysteryship::MysteryShip;
+use crate::obstacle::Obstacle;
 use crate::spaceship::Spaceship;
-use crate::{laser::Laser, obstacle::Obstacle};
 
 use rand::Rng;
 
 use raylib::{
     core::math::Vector2,
-    ffi::{KeyboardKey::*, Rectangle},
+    ffi::KeyboardKey::*,
     prelude::{RaylibDraw, RaylibDrawHandle},
     RaylibHandle, RaylibThread,
 };
@@ -24,6 +25,7 @@ pub struct Game {
     mysteryship: MysteryShip,
     mysteryship_spawn_interval: f64,
     time_last_spawned: f64,
+    lives: usize,
 }
 
 impl Game {
@@ -40,6 +42,7 @@ impl Game {
             mysteryship_spawn_interval: rand::thread_rng()
                 .gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL),
             time_last_spawned: 0.,
+            lives: PLAYER_LIVES,
         };
 
         // create the ostacles
@@ -125,32 +128,93 @@ impl Game {
         }
     }
 
-    pub fn check_for_collisions(&mut self, rl: &mut RaylibHandle) {
+    pub fn check_for_collisions(&mut self) -> bool {
+        // ================
         // spaceship lasers
+        // ================
         for laser in self.lasers.iter_mut() {
             // check against aliens
             for alien in self.aliens.iter_mut() {
                 unsafe {
-                    if alien.is_alive()
+                    if alien.is_active()
                         && raylib::ffi::CheckCollisionRecs(alien.get_rect(), laser.get_rect())
                     {
-                        alien.erase();
-                        laser.erase();
+                        alien.set_inactive();
+                        laser.set_inactive();
                     }
                 }
             }
-            // check against obstacles
+            // check if obstacle is hit and damage it!
             for obstacle in self.obstacles.iter_mut() {
                 for block in obstacle.blocks.iter_mut() {
                     unsafe {
                         if raylib::ffi::CheckCollisionRecs(block.get_rect(), laser.get_rect()) {
-                            block.erase();
-                            laser.erase();
+                            block.set_inactive();
+                            laser.set_inactive();
+                        }
+                    }
+                }
+            }
+            // check against mystery ship
+            unsafe {
+                if raylib::ffi::CheckCollisionRecs(self.mysteryship.get_rect(), laser.get_rect()) {
+                    self.mysteryship.set_inactive();
+                    laser.set_inactive();
+                }
+            }
+            // check against alien lasers (yep, we can destroy alien lasers!)
+            // T.B.D.
+        }
+
+        // ================
+        // alien lasers
+        // ================
+        for laser in self.alien_lasers.iter_mut() {
+            // check if spaceship is hit
+            unsafe {
+                if raylib::ffi::CheckCollisionRecs(laser.get_rect(), self.spaceship.get_rect()) {
+                    laser.set_inactive();
+                    self.lives -= 1;
+                    if self.lives == 0 {
+                        return true;
+                    }
+                }
+            }
+            // check if obstacle is hit and damage it!
+            for obstacle in self.obstacles.iter_mut() {
+                for block in obstacle.blocks.iter_mut() {
+                    unsafe {
+                        if raylib::ffi::CheckCollisionRecs(block.get_rect(), laser.get_rect()) {
+                            block.set_inactive();
+                            laser.set_inactive();
                         }
                     }
                 }
             }
         }
+
+        // ===========
+        // alien ships
+        // ===========
+        for alien in self.aliens.iter() {
+            // alien collision with obstacle
+            for obstacle in self.obstacles.iter_mut() {
+                for block in obstacle.blocks.iter_mut() {
+                    unsafe {
+                        if raylib::ffi::CheckCollisionRecs(block.get_rect(), alien.get_rect()) {
+                            block.set_inactive();
+                        }
+                    }
+                }
+            }
+            // alien collision with ship
+            unsafe {
+                if raylib::ffi::CheckCollisionRecs(self.spaceship.get_rect(), alien.get_rect()) {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     pub fn update(&mut self, rl: &mut RaylibHandle) {
@@ -171,7 +235,7 @@ impl Game {
         }
 
         // remove all inactive aliens
-        self.aliens.retain(|elem| elem.is_alive());
+        self.aliens.retain(|elem| elem.is_active());
 
         // update the aliens
         self.move_aliens(rl);
@@ -198,7 +262,9 @@ impl Game {
 
         self.mysteryship.update(rl);
 
-        self.check_for_collisions(rl);
+        if self.check_for_collisions() {
+            self.game_over();
+        }
     }
 
     pub fn draw(&mut self, d: &mut RaylibDrawHandle) {
@@ -220,5 +286,9 @@ impl Game {
         }
 
         self.mysteryship.draw(d);
+    }
+
+    fn game_over(&mut self) {
+        println!("Game over!");
     }
 }

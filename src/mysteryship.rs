@@ -15,7 +15,7 @@ pub struct MysteryShip {
     image: Texture2D,
     position: Vector2,
     speed: f32,
-    alive: bool,
+    active: bool,
 }
 
 impl MysteryShip {
@@ -26,21 +26,25 @@ impl MysteryShip {
             image: mystery_texture,
             position: Vector2::zero(),
             speed: 0.,
-            alive: false,
+            active: false,
         }
     }
 
+    pub fn set_inactive(&mut self) {
+        self.active = false;
+    }
+
     pub fn update(&mut self, rl: &mut RaylibHandle) {
-        if self.alive {
+        if self.active {
             self.position.x += self.speed;
             if self.position.x > rl.get_screen_width().as_f32() || self.position.x < 0. {
-                self.alive = false;
+                self.active = false;
             }
         }
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        if self.alive {
+        if self.active {
             d.draw_texture_v(&self.image, self.position, Color::WHITE);
         }
     }
@@ -55,14 +59,14 @@ impl MysteryShip {
             self.position.x = rl.get_screen_width().as_f32() - self.image.width.as_f32();
             self.speed = -MYSTERYSHIP_SPEED;
         }
-        self.alive = true;
+        self.active = true;
     }
 
     pub fn get_rect(&self) -> Rectangle {
         let mut width: f32 = 0.;
         let mut height: f32 = 0.;
 
-        if self.alive {
+        if self.active {
             width = self.image.width.as_f32();
             height = self.image.height.as_f32();
         }

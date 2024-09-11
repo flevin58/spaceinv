@@ -27,24 +27,21 @@ impl Laser {
         self.active
     }
 
+    pub fn set_inactive(&mut self) {
+        self.active = false;
+    }
+
     pub fn update(&mut self, rl: &mut RaylibHandle) {
         if self.active {
             self.position.y += self.speed;
             if self.position.y > rl.get_screen_height().as_f32() || self.position.y < 0. {
                 self.active = false;
-                println!("Laser inactive");
             }
         }
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        if self.active {
-            d.draw_rectangle_v(self.position, LASER_SIZE, LASER_COLOR);
-        }
-    }
-
-    pub fn erase(&mut self) {
-        self.active = false;
+        d.draw_rectangle_v(self.position, LASER_SIZE, LASER_COLOR);
     }
 
     pub fn get_rect(&self) -> Rectangle {

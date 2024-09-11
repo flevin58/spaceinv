@@ -18,12 +18,12 @@ impl Block {
         }
     }
 
-    pub fn erase(&mut self) {
-        self.active = false;
-    }
-
     pub fn is_active(&self) -> bool {
         self.active
+    }
+
+    pub fn set_inactive(&mut self) {
+        self.active = false;
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {

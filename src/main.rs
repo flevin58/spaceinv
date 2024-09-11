@@ -9,6 +9,7 @@ mod spaceship;
 
 use constants::*;
 use game::*;
+use raylib::ffi::TraceLogLevel::*;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
@@ -16,6 +17,8 @@ fn main() {
         .title(WINDOW_TITLE)
         .vsync()
         .build();
+
+    rl.set_trace_log(LOG_ERROR);
 
     rl.set_target_fps(60);
 

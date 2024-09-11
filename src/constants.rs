@@ -6,12 +6,15 @@ use raylib::math::Vector2;
 pub const WINDOW_WIDTH: i32 = 750;
 pub const WINDOW_HEIGHT: i32 = 700;
 pub const WINDOW_TITLE: &str = "Rust Space Invaders";
+
 pub const WINDOW_BKG_COLOR: Color = Color {
     r: 29,
     g: 29,
     b: 27,
     a: 255,
 };
+
+pub const PLAYER_LIVES: usize = 3;
 
 // LASER CONSTANTS
 

@@ -1,5 +1,3 @@
-use std::collections::btree_map::IterMut;
-
 use crate::block::Block;
 use crate::constants::*;
 use raylib::prelude::*;
