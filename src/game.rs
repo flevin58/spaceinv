@@ -16,15 +16,16 @@ use raylib::{
     RaylibHandle,
 };
 
-pub struct Game<'a> {
-    spaceship: Spaceship<'a>,
+pub struct Game<'g> {
+    assets: &'g Assets,
+    spaceship: Spaceship<'g>,
     lasers: Vec<Laser>,
     obstacles: Vec<Obstacle>,
-    aliens: Vec<Alien<'a>>,
+    aliens: Vec<Alien<'g>>,
     aliens_direction: i32,
     alien_lasers: Vec<Laser>,
     time_alien_last_fired: f64,
-    mysteryship: MysteryShip<'a>,
+    mysteryship: MysteryShip<'g>,
     mysteryship_spawn_interval: f64,
     time_last_spawned: f64,
     lives: usize,
@@ -34,12 +35,13 @@ pub struct Game<'a> {
     high_score: usize,
 }
 
-impl<'a> Game<'a> {
-    pub fn new(rl: &mut RaylibHandle, assets: &'a Assets) -> Self {
+impl<'g> Game<'g> {
+    pub fn new(rl: &mut RaylibHandle, assets: &'g Assets) -> Self {
         //let font_data = include_bytes!("../assets/fonts/monogram.ttf");
         //let font_res = rl.load_font_from_memory(thread, ".ttf", font_data, FONT_SIZE, None);
 
         let mut game = Game {
+            assets,
             spaceship: Spaceship::new(rl, assets),
             lasers: Vec::new(),
             obstacles: Vec::new(),
@@ -92,7 +94,7 @@ impl<'a> Game<'a> {
         game
     }
 
-    pub fn reset(&mut self, rl: &mut RaylibHandle, assets: &'a Assets) {
+    pub fn reset(&mut self, rl: &mut RaylibHandle, assets: &'g Assets) {
         self.spaceship.reset(rl);
         self.lasers.clear();
 
@@ -160,7 +162,7 @@ impl<'a> Game<'a> {
         }
     }
 
-    pub fn handle_input(&mut self, rl: &mut RaylibHandle, assets: &'a Assets) {
+    pub fn handle_input(&mut self, rl: &mut RaylibHandle, assets: &'g Assets) {
         // on game over we can reset the game!
         if !self.running {
             if rl.is_key_down(KEY_ENTER) {
@@ -233,6 +235,7 @@ impl<'a> Game<'a> {
                         self.score += alien.get_score();
                         alien.set_inactive();
                         laser.set_inactive();
+                        self.assets.play_explosion_sound();
                     }
                 }
             }
@@ -253,6 +256,7 @@ impl<'a> Game<'a> {
                     self.score += MYSTERYSHIP_SCORE;
                     self.mysteryship.set_inactive();
                     laser.set_inactive();
+                    self.assets.play_explosion_sound();
                 }
             }
             // check against alien lasers (yep, we can destroy alien lasers!)

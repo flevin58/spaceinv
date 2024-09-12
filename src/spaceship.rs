@@ -2,7 +2,6 @@ use raylib::{
     color::Color,
     core::math::Vector2,
     ffi::Rectangle,
-    misc::AsF32,
     prelude::{RaylibDraw, RaylibDrawHandle},
     RaylibHandle,
 };
@@ -86,7 +85,7 @@ impl<'s> Spaceship<'s> {
         if rl.get_time() - self.last_fire_time >= LASER_TIME {
             let laser_pos = Vector2 {
                 x: self.position.x
-                    + (self.assets.get_ship_texture().width.as_f32() - LASER_WIDTH) / 2.,
+                    + (self.assets.get_ship_texture().width as f32 - LASER_WIDTH) / 2.,
                 y: self.position.y,
             };
             self.last_fire_time = rl.get_time();

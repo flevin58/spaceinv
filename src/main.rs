@@ -2,6 +2,9 @@
 //! Based on this video: https://youtu.be/TGo3Oxdpr5o
 //!
 //! Rust implementation by Fernando Levin (flevin58@gmail.com)
+//!
+//! TBD: Sound assets are not implemented.
+//!
 mod alien;
 mod assets;
 mod block;
@@ -16,6 +19,7 @@ use assets::Assets;
 use constants::*;
 use game::*;
 use raylib::ffi::TraceLogLevel::*;
+use raylib::prelude::*;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
@@ -24,11 +28,31 @@ fn main() {
         .vsync()
         .build();
 
-    let assets = Assets::new(&mut rl, &thread);
-
     rl.set_trace_log(LOG_ERROR);
-
     rl.set_target_fps(60);
+
+    print!("Initializing audio device ... ");
+    let audio = RaylibAudio::init_audio_device().expect("error initializing audio device");
+    println!("done!");
+
+    if audio.is_audio_device_ready() {
+        println!("Audio device ready to use!");
+    }
+
+    /************************************************
+
+    let explosion_sound: Sound<'static> = audio
+        .new_sound(SOUND_EXPLOSION)
+        .expect("error loading explosion sound");
+
+    let laser_sound: Sound<'static> = audio
+        .new_sound(SOUND_LASER)
+        .expect("error loading explosion sound");
+
+
+    ************************************************/
+
+    let assets = Assets::new(&mut rl, &thread);
 
     let mut game = Game::new(&mut rl, &assets);
 

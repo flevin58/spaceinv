@@ -1,6 +1,5 @@
 use crate::constants::*;
-use raylib::{core::texture::Texture2D, text::Font, RaylibHandle, RaylibThread};
-// use raylib::core::audio::*,
+use raylib::prelude::*;
 
 pub struct Assets {
     font: Box<Font>,
@@ -9,7 +8,6 @@ pub struct Assets {
     alien3_texture: Box<Texture2D>,
     mystery_texture: Box<Texture2D>,
     ship_texture: Box<Texture2D>,
-    //music: Option<Music<'a>>,
 }
 
 impl Assets {
@@ -23,12 +21,6 @@ impl Assets {
         let mystery_texture = rl.load_texture(&thread, MYSTERYSHIP_TEXTURE).unwrap();
         let ship_texture = rl.load_texture(&thread, SPACESHIP_TEXTURE).unwrap();
 
-        // set audio assets
-        // let music_data = include_bytes!("../assets/sounds/music.ogg");
-        // let audio = &game.audio;
-        // let music = audio.new_music_from_memory(".ogg", &music_data.to_vec());
-        // game.music = Some(music.unwrap());
-
         Assets {
             font: Box::new(font_res.unwrap()),
             alien1_texture: Box::new(texture1),
@@ -36,7 +28,6 @@ impl Assets {
             alien3_texture: Box::new(texture3),
             mystery_texture: Box::new(mystery_texture),
             ship_texture: Box::new(ship_texture),
-            //audio: RaylibAudio::init_audio_device().unwrap(),
         }
     }
 
@@ -58,5 +49,9 @@ impl Assets {
 
     pub fn get_ship_texture(&self) -> &Texture2D {
         self.ship_texture.as_ref()
+    }
+
+    pub fn play_explosion_sound(&self) {
+        // T.B.D.
     }
 }

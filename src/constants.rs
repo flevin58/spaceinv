@@ -153,3 +153,9 @@ const ALIEN1_TEXTURE: &str = "assets/images/alien_1.png";
 const ALIEN2_TEXTURE: &str = "assets/images/alien_2.png";
 const ALIEN3_TEXTURE: &str = "assets/images/alien_3.png";
 pub const ALIEN_TEXTURES: [&str; 3] = [ALIEN1_TEXTURE, ALIEN2_TEXTURE, ALIEN3_TEXTURE];
+
+// SOUND CONSTANTS
+
+//pub const SOUND_LASER: &str = "assets/sounds/laser_pew.ogg";
+//pub const SOUND_EXPLOSION: &str = "assets/sounds/rumble.ogg";
+//pub const GAME_MUSIC: &str = "assets/sounds/music.ogg";
