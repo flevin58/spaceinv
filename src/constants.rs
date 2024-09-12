@@ -149,6 +149,7 @@ pub const ALIEN_DOWN_DISTANCE: usize = 4;
 pub const ALIEN_LASER_SPEED: f32 = 6.;
 pub const ALIEN_LASER_INTERVAL: f64 = 0.35;
 
-pub const ALIEN1_TEXTURE: &str = "assets/images/alien_1.png";
-pub const ALIEN2_TEXTURE: &str = "assets/images/alien_2.png";
-pub const ALIEN3_TEXTURE: &str = "assets/images/alien_3.png";
+const ALIEN1_TEXTURE: &str = "assets/images/alien_1.png";
+const ALIEN2_TEXTURE: &str = "assets/images/alien_2.png";
+const ALIEN3_TEXTURE: &str = "assets/images/alien_3.png";
+pub const ALIEN_TEXTURES: [&str; 3] = [ALIEN1_TEXTURE, ALIEN2_TEXTURE, ALIEN3_TEXTURE];

@@ -4,33 +4,25 @@ use raylib::{
     ffi::Rectangle,
     misc::AsF32,
     prelude::{RaylibDraw, RaylibDrawHandle},
-    texture::Texture2D,
-    RaylibHandle, RaylibThread,
+    RaylibHandle,
 };
 
-use crate::constants::*;
+use crate::{assets::Assets, constants::*};
 
-pub struct Alien {
-    image: Texture2D,
+pub struct Alien<'a> {
+    assets: &'a Assets,
+    kind: usize,
     position: Vector2,
     active: bool,
     score: usize,
 }
 
-impl Alien {
-    pub fn new(
-        rl: &mut RaylibHandle,
-        thread: &RaylibThread,
-        kind: usize,
-        position: Vector2,
-    ) -> Self {
-        let asset_files: [&str; 3] = [ALIEN1_TEXTURE, ALIEN2_TEXTURE, ALIEN3_TEXTURE];
-
-        // raylib::ffi::LoadImageFromMemory(".png", buffer, buffer_size);
-
+impl<'a> Alien<'a> {
+    pub fn new(assets: &'a Assets, kind: usize, position: Vector2) -> Self {
         Alien {
+            assets,
+            kind,
             position,
-            image: rl.load_texture(&thread, asset_files[kind - 1]).unwrap(),
             active: true,
             score: ALIEN_SCORES[kind - 1],
         }
@@ -41,7 +33,10 @@ impl Alien {
     }
 
     pub fn has_overflowed_right(&self, rl: &RaylibHandle) -> bool {
-        if self.position.x as i32 + self.image.width > rl.get_screen_width() - OFFSETX / 2 {
+        //if self.position.x as i32 + self.image.width > rl.get_screen_width() - OFFSETX / 2 {
+        if self.position.x as i32 + self.assets.get_alien_texture(self.kind).width
+            > rl.get_screen_width() - OFFSETX / 2
+        {
             true
         } else {
             false
@@ -57,8 +52,10 @@ impl Alien {
     }
 
     pub fn get_laser_position(&self) -> Vector2 {
-        let laser_x = self.position.x + self.image.width.as_f32() / 2.;
-        let laser_y = self.position.y + self.image.height.as_f32();
+        let width = self.assets.get_alien_texture(self.kind).width.as_f32();
+        let height = self.assets.get_alien_texture(self.kind).height.as_f32();
+        let laser_x = self.position.x + width / 2.;
+        let laser_y = self.position.y + height;
         Vector2::new(laser_x, laser_y)
     }
 
@@ -79,15 +76,19 @@ impl Alien {
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        d.draw_texture_v(&self.image, self.position, Color::WHITE);
+        d.draw_texture_v(
+            &self.assets.get_alien_texture(self.kind),
+            self.position,
+            Color::WHITE,
+        );
     }
 
     pub fn get_rect(&self) -> Rectangle {
         Rectangle {
             x: self.position.x,
             y: self.position.y,
-            width: self.image.width.as_f32(),
-            height: self.image.height.as_f32(),
+            width: self.assets.get_alien_texture(self.kind).width.as_f32(),
+            height: self.assets.get_alien_texture(self.kind).height.as_f32(),
         }
     }
 }

@@ -1,29 +1,24 @@
-use crate::constants::*;
+use crate::{assets::Assets, constants::*};
 use rand::Rng;
 
 use raylib::{
     color::Color,
     core::math::Vector2,
     ffi::Rectangle,
-    misc::AsF32,
-    prelude::{RaylibDraw, RaylibDrawHandle},
-    texture::Texture2D,
-    RaylibHandle, RaylibThread,
+    prelude::{RaylibDraw, RaylibDrawHandle, RaylibHandle},
 };
 
-pub struct MysteryShip {
-    image: Texture2D,
+pub struct MysteryShip<'m> {
+    assets: &'m Assets,
     position: Vector2,
     speed: f32,
     active: bool,
 }
 
-impl MysteryShip {
-    pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
-        let mystery_texture = rl.load_texture(&thread, MYSTERYSHIP_TEXTURE).unwrap();
-
+impl<'m> MysteryShip<'m> {
+    pub fn new(assets: &'m Assets) -> Self {
         MysteryShip {
-            image: mystery_texture,
+            assets,
             position: Vector2::zero(),
             speed: 0.,
             active: false,
@@ -37,7 +32,9 @@ impl MysteryShip {
     pub fn update(&mut self, rl: &mut RaylibHandle) {
         if self.active {
             self.position.x += self.speed;
-            if self.position.x > (rl.get_screen_width() - self.image.width - OFFSETX / 2) as f32
+            if self.position.x
+                > (rl.get_screen_width() - self.assets.get_mystery_texture().width - OFFSETX / 2)
+                    as f32
                 || self.position.x < (OFFSETX / 2) as f32
             {
                 self.active = false;
@@ -47,7 +44,11 @@ impl MysteryShip {
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
         if self.active {
-            d.draw_texture_v(&self.image, self.position, Color::WHITE);
+            d.draw_texture_v(
+                self.assets.get_mystery_texture(),
+                self.position,
+                Color::WHITE,
+            );
         }
     }
 
@@ -58,7 +59,9 @@ impl MysteryShip {
             self.position.x = (OFFSETX / 2) as f32;
             self.speed = MYSTERYSHIP_SPEED;
         } else {
-            self.position.x = (rl.get_screen_width() - self.image.width - OFFSETX / 2) as f32;
+            self.position.x = (rl.get_screen_width()
+                - self.assets.get_mystery_texture().width
+                - OFFSETX / 2) as f32;
             self.speed = -MYSTERYSHIP_SPEED;
         }
         self.active = true;
@@ -69,8 +72,8 @@ impl MysteryShip {
         let mut height: f32 = 0.;
 
         if self.active {
-            width = self.image.width.as_f32();
-            height = self.image.height.as_f32();
+            width = self.assets.get_mystery_texture().width as f32;
+            height = self.assets.get_mystery_texture().height as f32;
         }
 
         Rectangle {

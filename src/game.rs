@@ -1,77 +1,62 @@
 use std::{fs::File, io::Write};
 
-use crate::alien::Alien;
 use crate::constants::*;
 use crate::laser::Laser;
 use crate::mysteryship::MysteryShip;
 use crate::obstacle::Obstacle;
 use crate::spaceship::Spaceship;
+use crate::{alien::Alien, assets::Assets};
 
 use rand::Rng;
 
 use raylib::{
-    // core::audio::*,
     core::math::Vector2,
     ffi::KeyboardKey::*,
     prelude::{RaylibDraw, RaylibDrawHandle},
-    text::Font,
     RaylibHandle,
-    RaylibThread,
 };
 
-pub struct Game {
-    spaceship: Spaceship,
+pub struct Game<'a> {
+    spaceship: Spaceship<'a>,
     lasers: Vec<Laser>,
     obstacles: Vec<Obstacle>,
-    aliens: Vec<Alien>,
+    aliens: Vec<Alien<'a>>,
     aliens_direction: i32,
     alien_lasers: Vec<Laser>,
     time_alien_last_fired: f64,
-    mysteryship: MysteryShip,
+    mysteryship: MysteryShip<'a>,
     mysteryship_spawn_interval: f64,
     time_last_spawned: f64,
     lives: usize,
     running: bool,
-    font: Font,
     level: usize,
     score: usize,
     high_score: usize,
-    //audio: RaylibAudio,
-    //music: Option<Music<'a>>,
 }
 
-impl<'a> Game {
-    pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
-        let font_data = include_bytes!("../assets/fonts/monogram.ttf");
-        let font_res = rl.load_font_from_memory(thread, ".ttf", font_data, FONT_SIZE, None);
+impl<'a> Game<'a> {
+    pub fn new(rl: &mut RaylibHandle, assets: &'a Assets) -> Self {
+        //let font_data = include_bytes!("../assets/fonts/monogram.ttf");
+        //let font_res = rl.load_font_from_memory(thread, ".ttf", font_data, FONT_SIZE, None);
 
         let mut game = Game {
-            spaceship: Spaceship::new(rl, thread),
+            spaceship: Spaceship::new(rl, assets),
             lasers: Vec::new(),
             obstacles: Vec::new(),
             aliens: Vec::new(),
             aliens_direction: 1,
             alien_lasers: Vec::new(),
             time_alien_last_fired: 0.,
-            mysteryship: MysteryShip::new(rl, thread),
+            mysteryship: MysteryShip::new(assets),
             mysteryship_spawn_interval: rand::thread_rng()
                 .gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL),
             time_last_spawned: 0.,
             lives: PLAYER_LIVES,
             running: true,
-            font: font_res.unwrap(),
             level: 1,
             score: 0,
             high_score: 0,
-            //audio: RaylibAudio::init_audio_device().unwrap(),
-            //music: None,
         };
-
-        // set audio assets
-        // let music_data = include_bytes!("../assets/sounds/music.ogg");
-        // let audio = &game.audio;
-        // let music = audio.new_music_from_memory(".ogg", &music_data.to_vec());
-        // game.music = Some(music.unwrap());
 
         // create the obstacles
         let gap = (rl.get_screen_width() as usize - (NUM_OBSTACLES * OBSTACLE_WIDTH))
@@ -94,8 +79,7 @@ impl<'a> Game {
                 let x = ALIEN_OFFSET_X + col * ALIEN_SIZE;
                 let y = ALIEN_OFFSET_Y + row * ALIEN_SIZE;
                 game.aliens.push(Alien::new(
-                    rl,
-                    thread,
+                    assets,
                     alien_type,
                     Vector2::new(x as f32, y as f32),
                 ));
@@ -108,7 +92,7 @@ impl<'a> Game {
         game
     }
 
-    pub fn reset(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
+    pub fn reset(&mut self, rl: &mut RaylibHandle, assets: &'a Assets) {
         self.spaceship.reset(rl);
         self.lasers.clear();
 
@@ -134,8 +118,7 @@ impl<'a> Game {
                 let x = ALIEN_OFFSET_X + col * ALIEN_SIZE;
                 let y = ALIEN_OFFSET_Y + row * ALIEN_SIZE;
                 self.aliens.push(Alien::new(
-                    rl,
-                    thread,
+                    assets,
                     alien_type,
                     Vector2::new(x as f32, y as f32),
                 ));
@@ -177,11 +160,11 @@ impl<'a> Game {
         }
     }
 
-    pub fn handle_input(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
+    pub fn handle_input(&mut self, rl: &mut RaylibHandle, assets: &'a Assets) {
         // on game over we can reset the game!
         if !self.running {
             if rl.is_key_down(KEY_ENTER) {
-                self.reset(rl, thread);
+                self.reset(rl, assets);
             }
             return;
         }
@@ -384,7 +367,7 @@ impl<'a> Game {
         }
     }
 
-    pub fn draw(&mut self, d: &mut RaylibDrawHandle) {
+    pub fn draw(&mut self, d: &mut RaylibDrawHandle, assets: &Assets) {
         d.clear_background(WINDOW_BKG_COLOR);
         d.draw_rectangle_rounded_lines(
             FRAME_RECT,
@@ -407,7 +390,7 @@ impl<'a> Game {
         );
         if self.running {
             d.draw_text_ex(
-                &self.font,
+                assets.get_font(),
                 format!("LEVEL {:0>2}", self.level).as_str(),
                 LEVEL_POS,
                 FONT_SIZE as f32,
@@ -416,7 +399,7 @@ impl<'a> Game {
             );
         } else {
             d.draw_text_ex(
-                &self.font,
+                assets.get_font(),
                 "GAME OVER",
                 LEVEL_POS,
                 FONT_SIZE as f32,
@@ -425,7 +408,7 @@ impl<'a> Game {
             );
         }
         d.draw_text_ex(
-            &self.font,
+            assets.get_font(),
             "SCORE",
             GUI_SCORE_TEXT_POS,
             FONT_SIZE as f32,
@@ -433,7 +416,7 @@ impl<'a> Game {
             FRAME_COLOR,
         );
         d.draw_text_ex(
-            &self.font,
+            assets.get_font(),
             format!("{:0>5}", self.score).as_str(),
             GUI_SCORE_VALUE_POS,
             FONT_SIZE as f32,
@@ -441,7 +424,7 @@ impl<'a> Game {
             FRAME_COLOR,
         );
         d.draw_text_ex(
-            &self.font,
+            assets.get_font(),
             "HIGH SCORE",
             GUI_HIGH_SCORE_TEXT_POS,
             FONT_SIZE as f32,
@@ -449,7 +432,7 @@ impl<'a> Game {
             FRAME_COLOR,
         );
         d.draw_text_ex(
-            &self.font,
+            assets.get_font(),
             format!("{:0>5}", self.high_score).as_str(),
             GUI_HIGH_SCORE_VALUE_POS,
             FONT_SIZE as f32,
