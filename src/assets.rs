@@ -1,6 +1,5 @@
 use crate::constants::*;
 use raylib::prelude::*;
-
 pub struct Assets {
     font: Box<Font>,
     alien1_texture: Box<Texture2D>,
@@ -8,26 +7,47 @@ pub struct Assets {
     alien3_texture: Box<Texture2D>,
     mystery_texture: Box<Texture2D>,
     ship_texture: Box<Texture2D>,
+    //explosion_sound: Box<*mut Sound<'a>>,
 }
 
 impl Assets {
     pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
+        // The font is embedded in the binary
         let font_data = include_bytes!("../assets/fonts/monogram.ttf");
         let font_res = rl.load_font_from_memory(thread, ".ttf", font_data, FONT_SIZE, None);
 
-        let texture1 = rl.load_texture(&thread, ALIEN_TEXTURES[0]).unwrap();
-        let texture2 = rl.load_texture(&thread, ALIEN_TEXTURES[1]).unwrap();
-        let texture3 = rl.load_texture(&thread, ALIEN_TEXTURES[2]).unwrap();
-        let mystery_texture = rl.load_texture(&thread, MYSTERYSHIP_TEXTURE).unwrap();
-        let ship_texture = rl.load_texture(&thread, SPACESHIP_TEXTURE).unwrap();
+        // The alien textures are embedded in the binary
+        let alien1_data = include_bytes!("../assets/images/alien_1.png");
+        let alien1_image = Image::load_image_from_mem(".png", alien1_data).unwrap();
+        let alien1_texture = rl.load_texture_from_image(&thread, &alien1_image).unwrap();
+        let alien2_data = include_bytes!("../assets/images/alien_2.png");
+        let alien2_image = Image::load_image_from_mem(".png", alien2_data).unwrap();
+        let alien2_texture = rl.load_texture_from_image(&thread, &alien2_image).unwrap();
+        let alien3_data = include_bytes!("../assets/images/alien_3.png");
+        let alien3_image = Image::load_image_from_mem(".png", alien3_data).unwrap();
+        let alien3_texture = rl.load_texture_from_image(&thread, &alien3_image).unwrap();
+
+        // The mystery ship texture is embedded in the binary
+        let mystery_data = include_bytes!("../assets/images/mystery.png");
+        let mystery_image = Image::load_image_from_mem(".png", mystery_data).unwrap();
+        let mystery_texture = rl.load_texture_from_image(&thread, &mystery_image).unwrap();
+
+        // The mystery ship texture is embedded in the binary
+        let ship_data = include_bytes!("../assets/images/spaceship.png");
+        let ship_image = Image::load_image_from_mem(".png", ship_data).unwrap();
+        let ship_texture = rl.load_texture_from_image(&thread, &ship_image).unwrap();
+
+        // let ogg_explosion = audio.new_wave(SOUND_EXPLOSION).unwrap();
+        // let snd_explosion = audio.new_sound_from_wave(&ogg_explosion).unwrap();
 
         Assets {
             font: Box::new(font_res.unwrap()),
-            alien1_texture: Box::new(texture1),
-            alien2_texture: Box::new(texture2),
-            alien3_texture: Box::new(texture3),
+            alien1_texture: Box::new(alien1_texture),
+            alien2_texture: Box::new(alien2_texture),
+            alien3_texture: Box::new(alien3_texture),
             mystery_texture: Box::new(mystery_texture),
             ship_texture: Box::new(ship_texture),
+            //explosion_sound: Box::new(snd_explosion.as_ref()),
         }
     }
 
