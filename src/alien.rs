@@ -1,54 +1,44 @@
+use crate::assets::Assets;
+use crate::constants::*;
 use raylib::{
     color::Color,
     core::math::Vector2,
     ffi::Rectangle,
     misc::AsF32,
     prelude::{RaylibDraw, RaylibDrawHandle},
-    RaylibHandle,
 };
+use std::rc::Rc;
 
-use crate::{assets::Assets, constants::*};
-
-pub struct Alien<'a> {
-    assets: &'a Assets,
+pub struct Alien {
+    assets: Rc<Assets>,
     kind: usize,
     position: Vector2,
     active: bool,
     score: usize,
 }
 
-impl<'a> Alien<'a> {
-    pub fn new(assets: &'a Assets, kind: usize, position: Vector2) -> Self {
-        Alien {
+impl Alien {
+    pub fn new(assets: Rc<Assets>, kind: usize, position: Vector2) -> Box<Alien> {
+        Box::new(Alien {
             assets,
             kind,
             position,
             active: true,
             score: ALIEN_SCORES[kind - 1],
-        }
+        })
     }
 
     pub fn get_score(&self) -> usize {
         self.score
     }
 
-    pub fn has_overflowed_right(&self, rl: &RaylibHandle) -> bool {
-        //if self.position.x as i32 + self.image.width > rl.get_screen_width() - OFFSETX / 2 {
-        if self.position.x as i32 + self.assets.get_alien_texture(self.kind).width
-            > rl.get_screen_width() - OFFSETX / 2
-        {
-            true
-        } else {
-            false
-        }
+    pub fn has_overflowed_right(&self) -> bool {
+        self.position.x as i32 + self.assets.get_alien_texture(self.kind).width
+            > WINDOW_WIDTH - OFFSETX / 2
     }
 
     pub fn has_overflowed_left(&self) -> bool {
-        if (self.position.x as i32) < OFFSETX / 2 {
-            true
-        } else {
-            false
-        }
+        (self.position.x as i32) < (OFFSETX / 2)
     }
 
     pub fn get_laser_position(&self) -> Vector2 {
@@ -71,13 +61,13 @@ impl<'a> Alien<'a> {
         self.active
     }
 
-    pub fn update(&mut self, _rl: &mut RaylibHandle, direction: i32) {
+    pub fn update(&mut self, direction: i32) {
         self.position.x += direction.as_f32();
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
         d.draw_texture_v(
-            &self.assets.get_alien_texture(self.kind),
+            self.assets.get_alien_texture(self.kind),
             self.position,
             Color::WHITE,
         );

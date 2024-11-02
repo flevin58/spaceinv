@@ -1,4 +1,4 @@
-use raylib::color::Color;
+use raylib::ffi::Color;
 use raylib::ffi::Rectangle;
 use raylib::math::Vector2;
 
@@ -8,6 +8,8 @@ pub const WINDOW_WIDTH: i32 = 750;
 pub const WINDOW_HEIGHT: i32 = 700;
 pub const OFFSETX: i32 = 50;
 pub const OFFSETY: i32 = 100;
+pub const WORLD_WIDTH: i32 = WINDOW_WIDTH + OFFSETX;
+pub const WORLD_HEIGHT: i32 = WINDOW_HEIGHT + OFFSETY;
 pub const WINDOW_TITLE: &str = "Rust Space Invaders";
 
 pub const PLAYER_LIVES: usize = 3;
@@ -56,6 +58,20 @@ pub const FRAME_COLOR: Color = Color {
     r: 243,
     g: 216,
     b: 63,
+    a: 255,
+};
+
+pub const GREEN_COLOR: Color = Color {
+    r: 0,
+    g: 216,
+    b: 0,
+    a: 255,
+};
+
+pub const RED_COLOR: Color = Color {
+    r: 216,
+    g: 0,
+    b: 0,
     a: 255,
 };
 

@@ -1,5 +1,8 @@
 use crate::constants::*;
+use crate::context::*;
 use raylib::prelude::*;
+use std::rc::Rc;
+
 pub struct Assets {
     font: Box<Font>,
     alien1_texture: Box<Texture2D>,
@@ -11,10 +14,13 @@ pub struct Assets {
 }
 
 impl Assets {
-    pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
+    pub fn new(ctx: Rc<Context>) -> Self {
+        let mut rl = ctx.rl.borrow_mut();
+        let thread = ctx.thread.borrow();
+
         // The font is embedded in the binary
         let font_data = include_bytes!("../assets/fonts/monogram.ttf");
-        let font_res = rl.load_font_from_memory(thread, ".ttf", font_data, FONT_SIZE, None);
+        let font_res = rl.load_font_from_memory(&thread, ".ttf", font_data, FONT_SIZE, None);
 
         // The alien textures are embedded in the binary
         let alien1_data = include_bytes!("../assets/images/alien_1.png");

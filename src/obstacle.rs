@@ -2,6 +2,7 @@ use crate::block::Block;
 use crate::constants::*;
 use raylib::prelude::*;
 
+#[derive(Clone)]
 pub struct Obstacle {
     pub blocks: Vec<Block>,
 }

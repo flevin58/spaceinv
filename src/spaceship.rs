@@ -1,38 +1,41 @@
+use crate::context::Context;
 use raylib::{
     color::Color,
     core::math::Vector2,
     ffi::Rectangle,
     prelude::{RaylibDraw, RaylibDrawHandle},
-    RaylibHandle,
 };
+use std::rc::Rc;
 
+use crate::assets::Assets;
+use crate::constants::*;
 use crate::laser::Laser;
-use crate::{assets::Assets, constants::*};
 
+#[derive(Clone)]
 struct Bounds {
     min: f32,
     max: f32,
 }
 
-pub struct Spaceship<'s> {
-    assets: &'s Assets,
+pub struct Spaceship {
+    assets: Rc<Assets>,
     position: Vector2,
     bounds: Bounds,
     last_fire_time: f64,
 }
 
-impl<'s> Spaceship<'s> {
-    pub fn new(rl: &mut RaylibHandle, assets: &'s Assets) -> Self {
+impl Spaceship {
+    pub fn new(assets: Rc<Assets>) -> Self {
         let width = assets.get_ship_texture().width;
         let height = assets.get_ship_texture().height;
 
-        let ship_x = (rl.get_screen_width() - width) as f32 / 2.;
-        let ship_y = (rl.get_screen_height() - height - SPACESHIP_YOFFSET) as f32;
+        let ship_x = (WINDOW_WIDTH - width) as f32 / 2.;
+        let ship_y = (WINDOW_HEIGHT - height - SPACESHIP_YOFFSET) as f32;
 
         let ship_min = SPACESHIP_XOFFSET as f32;
-        let ship_max = (rl.get_screen_width() - width - SPACESHIP_XOFFSET) as f32;
+        let ship_max = (WINDOW_WIDTH - width - SPACESHIP_XOFFSET) as f32;
 
-        Spaceship {
+        Self {
             assets,
             position: Vector2 {
                 x: ship_x,
@@ -46,17 +49,16 @@ impl<'s> Spaceship<'s> {
         }
     }
 
-    pub fn reset(&mut self, rl: &RaylibHandle) {
+    pub fn reset(&mut self) {
         // put back the spacehip at the center
-        let ship_x = (rl.get_screen_width() - self.assets.get_ship_texture().width) / 2;
-        let ship_y =
-            rl.get_screen_height() - self.assets.get_ship_texture().height - SPACESHIP_YOFFSET;
+        let ship_x = (WORLD_WIDTH - self.assets.get_ship_texture().width) / 2;
+        let ship_y = WORLD_HEIGHT - self.assets.get_ship_texture().height - SPACESHIP_YOFFSET;
         self.position.x = ship_x as f32;
         self.position.y = ship_y as f32;
     }
 
     // currently unused
-    pub fn update(&mut self, _rl: &mut RaylibHandle) {}
+    pub fn update(&mut self) {}
 
     pub fn draw(&self, d: &mut RaylibDrawHandle) {
         d.draw_texture_v(self.assets.get_ship_texture(), self.position, Color::WHITE);
@@ -81,7 +83,9 @@ impl<'s> Spaceship<'s> {
         }
     }
 
-    pub fn fire_laser(&mut self, rl: &RaylibHandle) -> Option<Laser> {
+    pub fn fire_laser(&mut self, ctx: Rc<Context>) -> Option<Laser> {
+        let rl = ctx.rl.borrow();
+
         if rl.get_time() - self.last_fire_time >= LASER_TIME {
             let laser_pos = Vector2 {
                 x: self.position.x

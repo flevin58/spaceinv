@@ -1,12 +1,15 @@
 use crate::constants::*;
-
+use crate::context::Context;
 use raylib::{
     core::math::Vector2,
     ffi::Rectangle,
     prelude::{RaylibDraw, RaylibDrawHandle},
     RaylibHandle,
 };
+use std::cell::RefCell;
+use std::rc::Rc;
 
+#[derive(Clone)]
 pub struct Laser {
     position: Vector2,
     speed: f32,
@@ -30,11 +33,10 @@ impl Laser {
         self.active = false;
     }
 
-    pub fn update(&mut self, rl: &mut RaylibHandle) {
+    pub fn update(&mut self) {
         if self.active {
             self.position.y += self.speed;
-            if self.position.y > (rl.get_screen_height() - OFFSETY) as f32 || self.position.y < 25.
-            {
+            if self.position.y > (WORLD_HEIGHT - OFFSETY) as f32 || self.position.y < 25. {
                 self.active = false;
             }
         }

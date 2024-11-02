@@ -5,6 +5,7 @@ use raylib::{
     prelude::{RaylibDraw, RaylibDrawHandle},
 };
 
+#[derive(Clone)]
 pub struct Block {
     position: Vector2,
     active: bool,

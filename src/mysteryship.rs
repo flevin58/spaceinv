@@ -1,23 +1,24 @@
-use crate::{assets::Assets, constants::*};
+use crate::{assets::Assets, constants::*, context::Context};
 use rand::Rng;
+use std::rc::Rc;
 
 use raylib::{
     color::Color,
     core::math::Vector2,
     ffi::Rectangle,
-    prelude::{RaylibDraw, RaylibDrawHandle, RaylibHandle},
+    prelude::{RaylibDraw, RaylibDrawHandle},
 };
 
-pub struct MysteryShip<'m> {
-    assets: &'m Assets,
+pub struct MysteryShip {
+    assets: Rc<Assets>,
     position: Vector2,
     speed: f32,
     active: bool,
 }
 
-impl<'m> MysteryShip<'m> {
-    pub fn new(assets: &'m Assets) -> Self {
-        MysteryShip {
+impl MysteryShip {
+    pub fn new(assets: Rc<Assets>) -> Self {
+        Self {
             assets,
             position: Vector2::zero(),
             speed: 0.,
@@ -29,12 +30,11 @@ impl<'m> MysteryShip<'m> {
         self.active = false;
     }
 
-    pub fn update(&mut self, rl: &mut RaylibHandle) {
+    pub fn update(&mut self) {
         if self.active {
             self.position.x += self.speed;
             if self.position.x
-                > (rl.get_screen_width() - self.assets.get_mystery_texture().width - OFFSETX / 2)
-                    as f32
+                > (WORLD_WIDTH - self.assets.get_mystery_texture().width - OFFSETX / 2) as f32
                 || self.position.x < (OFFSETX / 2) as f32
             {
                 self.active = false;
@@ -52,7 +52,8 @@ impl<'m> MysteryShip<'m> {
         }
     }
 
-    pub fn spawn(&mut self, rl: &mut raylib::RaylibHandle) {
+    pub fn spawn(&mut self, ctx: Rc<Context>) {
+        let rl = ctx.rl.borrow();
         let side: i32 = rand::thread_rng().gen_range(0..1);
         self.position.y = MYSTERYSHIP_YPOS;
         if side == 0 {
