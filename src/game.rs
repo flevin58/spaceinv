@@ -134,14 +134,13 @@ impl Game {
     }
 
     pub fn create_obstacles(&mut self) {
-        let rl = self.ctx.rl.borrow();
         // create the obstacles
-        let gap = (rl.get_screen_width() as usize - (NUM_OBSTACLES * OBSTACLE_WIDTH))
-            / (NUM_OBSTACLES + 1);
+        const GAP: usize =
+            (WORLD_WIDTH as usize - (NUM_OBSTACLES * OBSTACLE_WIDTH)) / (NUM_OBSTACLES + 1);
         for i in 0..NUM_OBSTACLES {
-            let offset_x = (i + 1) * gap + i * OBSTACLE_WIDTH;
-            let offset_y = rl.get_screen_height() as usize - OBSTACLE_PADDING - OFFSETY as usize;
-            self.obstacles.push(Obstacle::new(offset_x, offset_y));
+            let offset_x = (i + 1) * GAP + i * OBSTACLE_WIDTH;
+            const OFFSET_Y: usize = WORLD_HEIGHT as usize - OBSTACLE_PADDING - OFFSETY as usize;
+            self.obstacles.push(Obstacle::new(offset_x, OFFSET_Y));
         }
     }
 

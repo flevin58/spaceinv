@@ -29,11 +29,11 @@ impl Spaceship {
         let width = assets.get_ship_texture().width;
         let height = assets.get_ship_texture().height;
 
-        let ship_x = (WINDOW_WIDTH - width) as f32 / 2.;
-        let ship_y = (WINDOW_HEIGHT - height - SPACESHIP_YOFFSET) as f32;
+        let ship_x = (WORLD_WIDTH - width) as f32 / 2.;
+        let ship_y = (WORLD_HEIGHT - height - SPACESHIP_YOFFSET) as f32;
 
         let ship_min = SPACESHIP_XOFFSET as f32;
-        let ship_max = (WINDOW_WIDTH - width - SPACESHIP_XOFFSET) as f32;
+        let ship_max = (WORLD_WIDTH - width - SPACESHIP_XOFFSET) as f32;
 
         Self {
             assets,

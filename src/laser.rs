@@ -1,13 +1,9 @@
 use crate::constants::*;
-use crate::context::Context;
 use raylib::{
     core::math::Vector2,
     ffi::Rectangle,
     prelude::{RaylibDraw, RaylibDrawHandle},
-    RaylibHandle,
 };
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Laser {
