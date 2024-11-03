@@ -62,9 +62,9 @@ pub const FRAME_COLOR: Color = Color {
 };
 
 pub const GREEN_COLOR: Color = Color {
-    r: 0,
-    g: 216,
-    b: 0,
+    r: 8,
+    g: 160,
+    b: 69,
     a: 255,
 };
 

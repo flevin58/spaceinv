@@ -169,7 +169,6 @@ impl Game {
         self.lasers.clear();
 
         // create the ostacles
-        let rl = self.ctx.rl.borrow_mut();
         self.obstacles.clear();
         let gap = (WINDOW_WIDTH as usize - (NUM_OBSTACLES * OBSTACLE_WIDTH)) / (NUM_OBSTACLES + 1);
         for i in 0..NUM_OBSTACLES {
@@ -250,16 +249,32 @@ impl Game {
             return;
         }
 
-        if rl.is_key_down(KEY_LEFT) {
-            self.spaceship.move_left();
-        } else if rl.is_key_down(KEY_RIGHT) {
-            self.spaceship.move_right();
-        } else if rl.is_key_down(KEY_SPACE) {
-            let laser = self.spaceship.fire_laser(self.ctx.clone());
-            if laser.is_some() {
-                self.lasers.push(laser.unwrap());
+        // For debug purposes!!!
+        if rl.is_key_pressed(KEY_G) {
+            self.state = GameState::GameOver;
+            return;
+        }
+        if rl.is_key_pressed(KEY_L) {
+            self.state = GameState::LevelUp;
+            return;
+        }
+
+        // Handle movement and laser fire
+        if self.state == GameState::Running {
+            if rl.is_key_down(KEY_LEFT) {
+                self.spaceship.move_left();
+            } else if rl.is_key_down(KEY_RIGHT) {
+                self.spaceship.move_right();
+            } else if rl.is_key_down(KEY_SPACE) {
+                let laser = self.spaceship.fire_laser(self.ctx.clone());
+                if laser.is_some() {
+                    self.lasers.push(laser.unwrap());
+                }
             }
-        } else if rl.is_key_pressed(KEY_P) {
+        }
+
+        // Handle pause/resume
+        if rl.is_key_pressed(KEY_P) {
             if self.state == GameState::Paused {
                 self.state = GameState::Running;
             } else if self.state == GameState::Running {
@@ -380,8 +395,6 @@ impl Game {
                     laser.set_inactive();
                     self.lives -= 1;
                     if self.lives == 0 {
-                        // line below gives error. TBD.
-                        // self.game_over();
                         self.state = GameState::GameOver;
                     }
                 }
@@ -592,6 +605,10 @@ impl Game {
 
         self.mysteryship.draw(&mut d);
 
+        if self.state == GameState::GameOver {
+            self.game_over_draw(&mut d);
+        }
+
         if self.state == GameState::LevelUp {
             self.level_up_draw(&mut d);
         }
@@ -599,7 +616,6 @@ impl Game {
 
     fn center_text_at(
         &mut self,
-        ctx: Rc<Context>,
         d: &mut RaylibDrawHandle,
         posx: i32,
         posy: i32,
@@ -613,35 +629,32 @@ impl Game {
             a: 255,
         };
 
-        let rl = ctx.rl.borrow_mut();
-        let text_width = rl.measure_text(text, 34);
+        let text_width = d.measure_text(text, 34);
         let newx = posx + (width - text_width) / 2;
         d.draw_text(text, newx, posy, 34, YELLOW);
     }
 
     fn draw_dialog_box(
         &mut self,
-        ctx: Rc<Context>,
         d: &mut RaylibDrawHandle,
         text1: &str,
         text2: &str,
         text3: &str,
         color: Color,
     ) {
-        const RWIDTH: i32 = 500;
+        const RWIDTH: i32 = 600;
         const RHEIGHT: i32 = 200;
-        let rposx = (WORLD_WIDTH - RWIDTH) / 2;
+        const RPOSX: i32 = (WORLD_WIDTH - RWIDTH) / 2;
         const RPOSY: i32 = 100;
-        d.draw_rectangle_gradient_h(rposx, RPOSY, RWIDTH, RHEIGHT, color, color);
-        d.draw_rectangle_lines(rposx, RPOSY, RWIDTH, RHEIGHT, color);
-        self.center_text_at(ctx.clone(), d, rposx, 150, RWIDTH, text1);
-        self.center_text_at(ctx.clone(), d, rposx, 190, RWIDTH, text2);
-        self.center_text_at(ctx.clone(), d, rposx, 230, RWIDTH, text3);
+        d.draw_rectangle_gradient_h(RPOSX, RPOSY, RWIDTH, RHEIGHT, color, color);
+        d.draw_rectangle_lines(RPOSX, RPOSY, RWIDTH, RHEIGHT, color);
+        self.center_text_at(d, RPOSX, 150, RWIDTH, text1);
+        self.center_text_at(d, RPOSX, 190, RWIDTH, text2);
+        self.center_text_at(d, RPOSX, 230, RWIDTH, text3);
     }
 
     fn level_up_draw(&mut self, d: &mut RaylibDrawHandle) {
         self.draw_dialog_box(
-            self.ctx.clone(),
             d,
             "CONGRATULATIONS",
             "YOU DEFEATED THE ALIENS",
@@ -652,7 +665,6 @@ impl Game {
 
     fn game_over_draw(&mut self, d: &mut RaylibDrawHandle) {
         self.draw_dialog_box(
-            self.ctx.clone(),
             d,
             "GAME OVER",
             "PRESS ENTER TO RESTART",
