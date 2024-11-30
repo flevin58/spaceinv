@@ -10,7 +10,6 @@ pub struct Assets {
     alien3_texture: Box<Texture2D>,
     mystery_texture: Box<Texture2D>,
     ship_texture: Box<Texture2D>,
-    //explosion_sound: Box<*mut Sound<'a>>,
 }
 
 impl Assets {
@@ -43,9 +42,6 @@ impl Assets {
         let ship_image = Image::load_image_from_mem(".png", ship_data).unwrap();
         let ship_texture = rl.load_texture_from_image(&thread, &ship_image).unwrap();
 
-        // let ogg_explosion = audio.new_wave(SOUND_EXPLOSION).unwrap();
-        // let snd_explosion = audio.new_sound_from_wave(&ogg_explosion).unwrap();
-
         Assets {
             font: Box::new(font_res.unwrap()),
             alien1_texture: Box::new(alien1_texture),
@@ -53,7 +49,6 @@ impl Assets {
             alien3_texture: Box::new(alien3_texture),
             mystery_texture: Box::new(mystery_texture),
             ship_texture: Box::new(ship_texture),
-            //explosion_sound: Box::new(snd_explosion.as_ref()),
         }
     }
 
@@ -79,5 +74,11 @@ impl Assets {
 
     pub fn play_explosion_sound(&self) {
         // T.B.D.
+    }
+}
+
+impl Drop for Assets {
+    fn drop(&mut self) {
+        todo!()
     }
 }

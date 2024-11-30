@@ -3,6 +3,7 @@ use std::{fs::File, io::Write};
 
 use crate::alien::Alien;
 use crate::assets::Assets;
+//use crate::audio::Audio;
 use crate::constants::*;
 use crate::context::Context;
 use crate::laser::Laser;
@@ -12,10 +13,10 @@ use crate::spaceship::Spaceship;
 use rand::Rng;
 
 use raylib::ffi::Color;
-use raylib::ffi::TraceLogLevel::*;
 use raylib::{
     core::math::Vector2,
     ffi::KeyboardKey::*,
+    ffi::TraceLogLevel,
     prelude::{RaylibDraw, RaylibDrawHandle},
 };
 
@@ -31,6 +32,7 @@ enum GameState {
 pub struct Game {
     ctx: Rc<Context>,
     assets: Rc<Assets>,
+    //audio: Rc<Audio>,
     spaceship: Box<Spaceship>,
     lasers: Vec<Laser>,
     obstacles: Vec<Obstacle>,
@@ -56,17 +58,12 @@ impl Game {
             .vsync()
             .build();
 
-        rl.set_trace_log(LOG_ERROR);
+        rl.set_trace_log(TraceLogLevel::LOG_ERROR);
         rl.set_target_fps(60);
-
-        // INIT AUDIO
-        // let audio = RaylibAudio::init_audio_device().expect("error initializing audio device");
-        // if audio.is_audio_device_ready() {
-        //     println!("Audio device ready to use!");
-        // }
 
         let context = Rc::new(Context::new(rl, thread));
         let assets = Rc::new(Assets::new(context.clone()));
+        //let audio = Rc::new(Audio::new(context.clone()));
 
         let mut game = Game {
             ctx: context.clone(),
@@ -162,48 +159,6 @@ impl Game {
                 ));
             }
         }
-    }
-
-    pub fn reset(&mut self) {
-        self.spaceship.reset();
-        self.lasers.clear();
-
-        // create the ostacles
-        self.obstacles.clear();
-        let gap = (WINDOW_WIDTH as usize - (NUM_OBSTACLES * OBSTACLE_WIDTH)) / (NUM_OBSTACLES + 1);
-        for i in 0..NUM_OBSTACLES {
-            let offset_x = (i + 1) * gap + i * OBSTACLE_WIDTH;
-            let offset_y = WINDOW_HEIGHT as usize - OBSTACLE_PADDING;
-            self.obstacles.push(Obstacle::new(offset_x, offset_y));
-        }
-
-        self.aliens.clear();
-        // create the aliens
-        for row in 0..ALIEN_ROWS {
-            let alien_type = match row {
-                0 => 3,
-                1 | 2 => 2,
-                _ => 1,
-            };
-            for col in 0..ALIEN_COLUMNS {
-                let x = ALIEN_OFFSET_X + col * ALIEN_SIZE;
-                let y = ALIEN_OFFSET_Y + row * ALIEN_SIZE;
-                self.aliens.push(Alien::new(
-                    self.assets.clone(),
-                    alien_type,
-                    Vector2::new(x as f32, y as f32),
-                ));
-            }
-        }
-
-        self.aliens_direction = 1;
-        self.alien_lasers.clear();
-        self.time_alien_last_fired = 0.;
-        self.mysteryship_spawn_interval =
-            rand::thread_rng().gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL);
-        self.time_last_spawned = 0.;
-        self.lives = PLAYER_LIVES;
-        self.state = GameState::Running;
     }
 
     pub fn check_for_highscore(&mut self) {

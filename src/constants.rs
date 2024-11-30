@@ -69,9 +69,9 @@ pub const GREEN_COLOR: Color = Color {
 };
 
 pub const RED_COLOR: Color = Color {
-    r: 216,
-    g: 0,
-    b: 0,
+    r: 133,
+    g: 1,
+    b: 1,
     a: 255,
 };
 
