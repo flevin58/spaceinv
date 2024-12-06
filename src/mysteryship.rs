@@ -28,6 +28,10 @@ impl MysteryShip {
         }
     }
 
+    pub fn is_active(&self) -> bool {
+        self.active
+    }
+
     pub fn set_inactive(&mut self) {
         self.active = false;
     }

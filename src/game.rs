@@ -318,7 +318,7 @@ impl Game {
                     self.score += alien.get_score();
                     alien.set_inactive();
                     laser.set_inactive();
-                    self.assets.play_explosion_sound();
+                    self.assets.play_alien_explosion_sound();
                 }
             }
             // check if obstacle is hit and damage it!
@@ -335,7 +335,7 @@ impl Game {
                 self.score += MYSTERYSHIP_SCORE;
                 self.mysteryship.set_inactive();
                 laser.set_inactive();
-                self.assets.play_explosion_sound();
+                self.assets.play_mystery_explosion_sound();
             }
             // check against alien lasers (yep, we can destroy alien lasers!)
             // T.B.D.
@@ -347,7 +347,7 @@ impl Game {
         for laser in self.alien_lasers.iter_mut() {
             // check if spaceship is hit
             if unsafe { CheckCollisionRecs(laser.get_rect(), self.spaceship.get_rect()) } {
-                self.assets.play_explosion_sound();
+                self.assets.play_ship_explosion_sound();
                 laser.set_inactive();
                 self.lives -= 1;
                 if self.lives == 0 {
@@ -443,7 +443,10 @@ impl Game {
                 rand::thread_rng().gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL)
         }
 
-        self.mysteryship.update();
+        if self.mysteryship.is_active() {
+            self.assets.play_mystery_sound();
+            self.mysteryship.update();
+        }
 
         let done = self.check_for_collisions();
         self.check_for_highscore();

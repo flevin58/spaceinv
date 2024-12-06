@@ -1,5 +1,6 @@
 use crate::constants::*;
 use crate::log;
+use raylib_ffi::IsSoundPlaying;
 use raylib_ffi::LoadSoundFromWave;
 use raylib_ffi::LoadWaveFromMemory;
 use raylib_ffi::PlaySound;
@@ -15,12 +16,13 @@ pub struct Assets {
     font: Font,
     music: Music,
     laser: Sound,
-    explosion: Sound,
+    alien_explosion: Sound,
+    ship_explosion: Sound,
+    mystery_sound: Sound,
 }
 
 impl Drop for Assets {
     fn drop(&mut self) {
-        log::info("Assets is dropping !!!");
         unsafe {
             UnloadFont(self.font);
             UnloadMusicStream(self.music);
@@ -69,7 +71,9 @@ impl Assets {
                 font: embed_ttf_font!("../assets/fonts/monogram.ttf", FONT_SIZE),
                 music: music_res,
                 laser: embed_ogg_sound!("../assets/sounds/laser.ogg"),
-                explosion: embed_ogg_sound!("../assets/sounds/explosion.ogg"),
+                alien_explosion: embed_ogg_sound!("../assets/sounds/alien_explosion.ogg"),
+                ship_explosion: embed_ogg_sound!("../assets/sounds/ship_explosion.ogg"),
+                mystery_sound: embed_ogg_sound!("../assets/sounds/mystery.ogg"),
             }
         }
     }
@@ -97,9 +101,29 @@ impl Assets {
         }
     }
 
-    pub fn play_explosion_sound(&self) {
+    pub fn play_alien_explosion_sound(&self) {
         unsafe {
-            PlaySound(self.explosion);
+            PlaySound(self.alien_explosion);
+        }
+    }
+
+    pub fn play_mystery_explosion_sound(&self) {
+        unsafe {
+            PlaySound(self.alien_explosion);
+        }
+    }
+
+    pub fn play_ship_explosion_sound(&self) {
+        unsafe {
+            PlaySound(self.ship_explosion);
+        }
+    }
+
+    pub fn play_mystery_sound(&self) {
+        unsafe {
+            if !IsSoundPlaying(self.mystery_sound) {
+                PlaySound(self.mystery_sound);
+            }
         }
     }
 }
