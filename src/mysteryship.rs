@@ -1,26 +1,28 @@
-use crate::{assets::Assets, constants::*, context::Context};
+use crate::constants::*;
 use rand::Rng;
-use std::rc::Rc;
-
-use raylib::{
-    color::Color,
-    core::math::Vector2,
-    ffi::Rectangle,
-    prelude::{RaylibDraw, RaylibDrawHandle},
+use raylib_ffi::{
+    rl_str, DrawTextureV, GetScreenWidth, LoadImageFromMemory, LoadTextureFromImage, Rectangle,
+    Texture2D, Vector2,
 };
 
 pub struct MysteryShip {
-    assets: Rc<Assets>,
+    texture: Texture2D,
     position: Vector2,
     speed: f32,
     active: bool,
 }
 
 impl MysteryShip {
-    pub fn new(assets: Rc<Assets>) -> Self {
+    pub fn new() -> Self {
+        let ship_data = include_bytes!("../assets/images/mystery.png");
+        let texture = unsafe {
+            let ship_image =
+                LoadImageFromMemory(rl_str!(".png"), ship_data.as_ptr(), ship_data.len() as i32);
+            LoadTextureFromImage(ship_image)
+        };
         Self {
-            assets,
-            position: Vector2::zero(),
+            texture,
+            position: Vector2 { x: 0., y: 0. },
             speed: 0.,
             active: false,
         }
@@ -33,8 +35,7 @@ impl MysteryShip {
     pub fn update(&mut self) {
         if self.active {
             self.position.x += self.speed;
-            if self.position.x
-                > (WORLD_WIDTH - self.assets.get_mystery_texture().width - OFFSETX / 2) as f32
+            if self.position.x > (WORLD_WIDTH - self.texture.width - OFFSETX / 2) as f32
                 || self.position.x < (OFFSETX / 2) as f32
             {
                 self.active = false;
@@ -42,27 +43,23 @@ impl MysteryShip {
         }
     }
 
-    pub fn draw(&self, d: &mut RaylibDrawHandle) {
+    pub fn draw(&self) {
         if self.active {
-            d.draw_texture_v(
-                self.assets.get_mystery_texture(),
-                self.position,
-                Color::WHITE,
-            );
+            unsafe {
+                DrawTextureV(self.texture, self.position, COLOR_WHITE);
+            }
         }
     }
 
-    pub fn spawn(&mut self, ctx: Rc<Context>) {
-        let rl = ctx.rl.borrow();
+    pub fn spawn(&mut self) {
+        let swidth = unsafe { GetScreenWidth() };
         let side: i32 = rand::thread_rng().gen_range(0..1);
         self.position.y = MYSTERYSHIP_YPOS;
         if side == 0 {
             self.position.x = (OFFSETX / 2) as f32;
             self.speed = MYSTERYSHIP_SPEED;
         } else {
-            self.position.x = (rl.get_screen_width()
-                - self.assets.get_mystery_texture().width
-                - OFFSETX / 2) as f32;
+            self.position.x = (swidth - self.texture.width - OFFSETX / 2) as f32;
             self.speed = -MYSTERYSHIP_SPEED;
         }
         self.active = true;
@@ -73,8 +70,8 @@ impl MysteryShip {
         let mut height: f32 = 0.;
 
         if self.active {
-            width = self.assets.get_mystery_texture().width as f32;
-            height = self.assets.get_mystery_texture().height as f32;
+            width = self.texture.width as f32;
+            height = self.texture.height as f32;
         }
 
         Rectangle {

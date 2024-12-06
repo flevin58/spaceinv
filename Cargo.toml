@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-raylib = "5.0"
 rand = "0.8.5"
+raylib-ffi = "5.5.0"
 toml = "0.8.19"

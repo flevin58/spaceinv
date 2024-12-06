@@ -1,6 +1,7 @@
 use crate::block::Block;
 use crate::constants::*;
-use raylib::prelude::*;
+use ray::Vector2;
+use raylib_ffi as ray;
 
 #[derive(Clone)]
 pub struct Obstacle {
@@ -34,9 +35,9 @@ impl Obstacle {
         self.blocks.retain(|elem| elem.is_active());
     }
 
-    pub fn draw(&self, d: &mut RaylibDrawHandle) {
+    pub fn draw(&self) {
         for block in self.blocks.iter() {
-            block.draw(d);
+            block.draw();
         }
     }
 }

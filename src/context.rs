@@ -1,4 +1,4 @@
-use raylib::prelude::*;
+use raylib_ffi as ray;
 use std::cell::RefCell;
 
 pub struct Context {

@@ -1,24 +1,26 @@
-use std::rc::Rc;
+use std::os::raw::c_int;
 use std::{fs::File, io::Write};
 
 use crate::alien::Alien;
 use crate::assets::Assets;
 //use crate::audio::Audio;
 use crate::constants::*;
-use crate::context::Context;
+//use crate::context::Context;
 use crate::laser::Laser;
+use crate::log;
 use crate::mysteryship::MysteryShip;
 use crate::obstacle::Obstacle;
 use crate::spaceship::Spaceship;
 use rand::Rng;
 
-use raylib::ffi::Color;
-use raylib::{
-    core::math::Vector2,
-    ffi::KeyboardKey::*,
-    ffi::TraceLogLevel,
-    prelude::{RaylibDraw, RaylibDrawHandle},
+use raylib_ffi::{
+    enums::{KeyboardKey, TraceLogLevel},
+    rl_str, BeginDrawing, CheckCollisionRecs, ClearBackground, CloseAudioDevice, Color, DrawLineEx,
+    DrawRectangleGradientH, DrawRectangleLines, DrawRectangleRoundedLinesEx, DrawText, DrawTextEx,
+    EndDrawing, GetTime, InitAudioDevice, InitWindow, IsKeyDown, IsKeyPressed, MeasureText,
+    SetTargetFPS, SetTraceLogLevel, Vector2, WindowShouldClose,
 };
+use raylib_ffi::{CloseWindow, SetMusicVolume};
 
 #[derive(Clone, PartialEq)]
 enum GameState {
@@ -30,9 +32,7 @@ enum GameState {
 }
 
 pub struct Game {
-    ctx: Rc<Context>,
-    assets: Rc<Assets>,
-    //audio: Rc<Audio>,
+    assets: Box<Assets>,
     spaceship: Box<Spaceship>,
     lasers: Vec<Laser>,
     obstacles: Vec<Obstacle>,
@@ -50,32 +50,35 @@ pub struct Game {
     state: GameState,
 }
 
+impl Drop for Game {
+    fn drop(&mut self) {
+        log::info("Game is dropping !!!");
+        unsafe {
+            CloseWindow();
+            CloseAudioDevice();
+        }
+    }
+}
+
 impl Game {
     pub fn new() -> Self {
-        let (mut rl, thread) = raylib::init()
-            .size(WORLD_WIDTH, WORLD_HEIGHT)
-            .title(WINDOW_TITLE)
-            .vsync()
-            .build();
-
-        rl.set_trace_log(TraceLogLevel::LOG_ERROR);
-        rl.set_target_fps(60);
-
-        let context = Rc::new(Context::new(rl, thread));
-        let assets = Rc::new(Assets::new(context.clone()));
-        //let audio = Rc::new(Audio::new(context.clone()));
+        unsafe {
+            InitAudioDevice();
+            InitWindow(WORLD_WIDTH, WORLD_HEIGHT, rl_str!(WINDOW_TITLE));
+            SetTargetFPS(60);
+            SetTraceLogLevel(TraceLogLevel::Error as i32);
+        }
 
         let mut game = Game {
-            ctx: context.clone(),
-            assets: assets.clone(),
-            spaceship: Box::new(Spaceship::new(assets.clone())),
+            assets: Box::new(Assets::new()),
+            spaceship: Box::new(Spaceship::new()),
             lasers: Vec::new(),
             obstacles: Vec::new(),
             aliens: Vec::new(),
             aliens_direction: 1,
             alien_lasers: Vec::new(),
             time_alien_last_fired: 0.,
-            mysteryship: Box::new(MysteryShip::new(assets.clone())),
+            mysteryship: Box::new(MysteryShip::new()),
             mysteryship_spawn_interval: rand::thread_rng()
                 .gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL),
             time_last_spawned: 0.,
@@ -119,6 +122,7 @@ impl Game {
         self.load_high_score();
         self.reset_game();
         self.init_level();
+        self.assets.play_music();
     }
 
     pub fn reset_game(&mut self) {
@@ -144,18 +148,20 @@ impl Game {
     pub fn create_aliens(&mut self) {
         for row in 0..ALIEN_ROWS {
             let alien_type = match row {
-                0 => 3,
-                1 | 2 => 2,
-                _ => 1,
+                0 => ALIEN3,
+                1 | 2 => ALIEN2,
+                _ => ALIEN1,
             };
 
             for col in 0..ALIEN_COLUMNS {
                 let x = ALIEN_OFFSET_X + col * ALIEN_SIZE;
                 let y = ALIEN_OFFSET_Y + row * ALIEN_SIZE;
                 self.aliens.push(Alien::new(
-                    self.assets.clone(),
                     alien_type,
-                    Vector2::new(x as f32, y as f32),
+                    Vector2 {
+                        x: x as f32,
+                        y: y as f32,
+                    },
                 ));
             }
         }
@@ -187,75 +193,77 @@ impl Game {
     }
 
     pub fn handle_input(&mut self) {
-        let ctx = self.ctx.clone();
-        let rl = ctx.rl.borrow();
+        unsafe {
+            if WindowShouldClose() {
+                self.state = GameState::Quit;
+            }
 
-        if rl.window_should_close() {
-            self.state = GameState::Quit;
-        }
+            if self.state == GameState::GameOver {
+                self.handle_game_over_input();
+                return;
+            }
 
-        if self.state == GameState::GameOver {
-            self.handle_game_over_input();
-            return;
-        }
+            if self.state == GameState::LevelUp {
+                self.handle_level_up_input();
+                return;
+            }
 
-        if self.state == GameState::LevelUp {
-            self.handle_level_up_input();
-            return;
-        }
+            // For debug purposes!!!
+            if IsKeyPressed(KeyboardKey::G as c_int) {
+                self.state = GameState::GameOver;
+                log::info("GameOver invoked by keyboard!");
+                return;
+            }
+            if IsKeyPressed(KeyboardKey::L as c_int) {
+                self.state = GameState::LevelUp;
+                log::info("LevelUp invoked by keyboard!");
+                return;
+            }
 
-        // For debug purposes!!!
-        if rl.is_key_pressed(KEY_G) {
-            self.state = GameState::GameOver;
-            return;
-        }
-        if rl.is_key_pressed(KEY_L) {
-            self.state = GameState::LevelUp;
-            return;
-        }
-
-        // Handle movement and laser fire
-        if self.state == GameState::Running {
-            if rl.is_key_down(KEY_LEFT) {
-                self.spaceship.move_left();
-            } else if rl.is_key_down(KEY_RIGHT) {
-                self.spaceship.move_right();
-            } else if rl.is_key_down(KEY_SPACE) {
-                let laser = self.spaceship.fire_laser(self.ctx.clone());
-                if laser.is_some() {
-                    self.lasers.push(laser.unwrap());
+            // Handle movement and laser fire
+            if self.state == GameState::Running {
+                if IsKeyDown(KeyboardKey::Left as c_int) {
+                    self.spaceship.move_left();
+                } else if IsKeyDown(KeyboardKey::Right as c_int) {
+                    self.spaceship.move_right();
+                } else if IsKeyDown(KeyboardKey::Space as c_int) {
+                    let laser = self.spaceship.fire_laser();
+                    if laser.is_some() {
+                        self.assets.play_laser_sound();
+                        self.lasers.push(laser.unwrap());
+                    }
                 }
             }
-        }
 
-        // Handle pause/resume
-        if rl.is_key_pressed(KEY_P) {
-            if self.state == GameState::Paused {
-                self.state = GameState::Running;
-            } else if self.state == GameState::Running {
-                self.state = GameState::Paused;
+            // Handle pause/resume
+            if IsKeyPressed(KeyboardKey::P as c_int) {
+                if self.state == GameState::Paused {
+                    self.state = GameState::Running;
+                } else if self.state == GameState::Running {
+                    self.state = GameState::Paused;
+                }
             }
         }
     }
 
     pub fn handle_game_over_input(&mut self) {
-        let ctx = self.ctx.clone();
-        let rl = ctx.rl.borrow();
-        if rl.is_key_pressed(KEY_ESCAPE) {
-            self.state = GameState::Quit;
-        }
-        if rl.is_key_pressed(KEY_ENTER) {
-            self.reset_game();
-            self.init_game();
+        unsafe {
+            if IsKeyPressed(KeyboardKey::Escape as c_int) {
+                self.state = GameState::Quit;
+            }
+            if IsKeyPressed(KeyboardKey::Enter as c_int) {
+                self.reset_game();
+                self.init_game();
+            }
         }
     }
 
     pub fn handle_level_up_input(&mut self) {
-        let ctx = self.ctx.clone();
-        let rl = ctx.rl.borrow();
-        if rl.is_key_pressed(KEY_ENTER) {
-            self.reset_game();
-            self.init_level();
+        unsafe {
+            if IsKeyPressed(KeyboardKey::Enter as c_int) {
+                self.reset_game();
+                self.init_level();
+            }
         }
     }
 
@@ -283,9 +291,8 @@ impl Game {
         }
     }
 
-    pub fn aliens_shoot_laser(&mut self, ctx: Rc<Context>) {
-        let rl = ctx.rl.borrow();
-        let current_time = rl.get_time();
+    pub fn aliens_shoot_laser(&mut self) {
+        let current_time = unsafe { GetTime() };
         if current_time - self.time_alien_last_fired >= ALIEN_LASER_INTERVAL
             && !self.aliens.is_empty()
         {
@@ -294,7 +301,7 @@ impl Game {
             let laser_pos = alien.get_laser_position();
             self.alien_lasers
                 .push(Laser::new(laser_pos, ALIEN_LASER_SPEED));
-            self.time_alien_last_fired = rl.get_time();
+            self.time_alien_last_fired = unsafe { GetTime() };
         }
     }
 
@@ -305,36 +312,30 @@ impl Game {
         for laser in self.lasers.iter_mut() {
             // check against aliens
             for alien in self.aliens.iter_mut() {
-                unsafe {
-                    if alien.is_active()
-                        && raylib::ffi::CheckCollisionRecs(alien.get_rect(), laser.get_rect())
-                    {
-                        self.score += alien.get_score();
-                        alien.set_inactive();
-                        laser.set_inactive();
-                        self.assets.play_explosion_sound();
-                    }
+                if alien.is_active()
+                    && unsafe { CheckCollisionRecs(alien.get_rect(), laser.get_rect()) }
+                {
+                    self.score += alien.get_score();
+                    alien.set_inactive();
+                    laser.set_inactive();
+                    self.assets.play_explosion_sound();
                 }
             }
             // check if obstacle is hit and damage it!
             for obstacle in self.obstacles.iter_mut() {
                 for block in obstacle.blocks.iter_mut() {
-                    unsafe {
-                        if raylib::ffi::CheckCollisionRecs(block.get_rect(), laser.get_rect()) {
-                            block.set_inactive();
-                            laser.set_inactive();
-                        }
+                    if unsafe { CheckCollisionRecs(block.get_rect(), laser.get_rect()) } {
+                        block.set_inactive();
+                        laser.set_inactive();
                     }
                 }
             }
             // check against mystery ship
-            unsafe {
-                if raylib::ffi::CheckCollisionRecs(self.mysteryship.get_rect(), laser.get_rect()) {
-                    self.score += MYSTERYSHIP_SCORE;
-                    self.mysteryship.set_inactive();
-                    laser.set_inactive();
-                    //self.assets.play_explosion_sound();
-                }
+            if unsafe { CheckCollisionRecs(self.mysteryship.get_rect(), laser.get_rect()) } {
+                self.score += MYSTERYSHIP_SCORE;
+                self.mysteryship.set_inactive();
+                laser.set_inactive();
+                self.assets.play_explosion_sound();
             }
             // check against alien lasers (yep, we can destroy alien lasers!)
             // T.B.D.
@@ -345,23 +346,20 @@ impl Game {
         // ================
         for laser in self.alien_lasers.iter_mut() {
             // check if spaceship is hit
-            unsafe {
-                if raylib::ffi::CheckCollisionRecs(laser.get_rect(), self.spaceship.get_rect()) {
-                    laser.set_inactive();
-                    self.lives -= 1;
-                    if self.lives == 0 {
-                        self.state = GameState::GameOver;
-                    }
+            if unsafe { CheckCollisionRecs(laser.get_rect(), self.spaceship.get_rect()) } {
+                self.assets.play_explosion_sound();
+                laser.set_inactive();
+                self.lives -= 1;
+                if self.lives == 0 {
+                    self.state = GameState::GameOver;
                 }
             }
             // check if obstacle is hit and damage it!
             for obstacle in self.obstacles.iter_mut() {
                 for block in obstacle.blocks.iter_mut() {
-                    unsafe {
-                        if raylib::ffi::CheckCollisionRecs(block.get_rect(), laser.get_rect()) {
-                            block.set_inactive();
-                            laser.set_inactive();
-                        }
+                    if unsafe { CheckCollisionRecs(block.get_rect(), laser.get_rect()) } {
+                        block.set_inactive();
+                        laser.set_inactive();
                     }
                 }
             }
@@ -378,18 +376,14 @@ impl Game {
             // alien collision with obstacle
             for obstacle in self.obstacles.iter_mut() {
                 for block in obstacle.blocks.iter_mut() {
-                    unsafe {
-                        if raylib::ffi::CheckCollisionRecs(block.get_rect(), alien.get_rect()) {
-                            block.set_inactive();
-                        }
+                    if unsafe { CheckCollisionRecs(block.get_rect(), alien.get_rect()) } {
+                        block.set_inactive();
                     }
                 }
             }
             // alien collision with ship
-            unsafe {
-                if raylib::ffi::CheckCollisionRecs(self.spaceship.get_rect(), alien.get_rect()) {
-                    return true;
-                }
+            if unsafe { CheckCollisionRecs(self.spaceship.get_rect(), alien.get_rect()) } {
+                return true;
             }
         }
         false
@@ -401,49 +395,50 @@ impl Game {
             return;
         }
 
-        // update the spaceship (currently does nothing)
+        // Update the music
+        self.assets.update_music();
+
+        // Update the spaceship (currently does nothing)
         self.spaceship.update();
 
-        // update all spaceship lasers
+        // Update all spaceship lasers
         for laser in self.lasers.iter_mut() {
             laser.update();
         }
 
-        // remove all inactive spaceship lasers
+        // Remove all inactive spaceship lasers
         self.lasers.retain(|elem| elem.is_active());
 
-        // remove all inactive blocks
+        // Remove all inactive blocks
         for obstacle in self.obstacles.iter_mut() {
             obstacle.remove_inactive_blocks();
         }
 
-        // remove all inactive aliens
+        // Remove all inactive aliens
         self.aliens.retain(|elem| elem.is_active());
         if self.aliens.is_empty() {
             self.state = GameState::LevelUp;
         }
 
-        // update the aliens
+        // Update the aliens
         self.move_aliens();
 
-        // create alien lasers
-        self.aliens_shoot_laser(self.ctx.clone());
+        // Create alien lasers
+        self.aliens_shoot_laser();
 
-        // update alien lasers
+        // Update alien lasers
         for laser in self.alien_lasers.iter_mut() {
             laser.update();
         }
 
-        // remove all inactive alien lasers
+        // Remove all inactive alien lasers
         self.alien_lasers.retain(|elem| elem.is_active());
 
-        // update the mystery ship
-        let ctx = self.ctx.clone();
-        let rl = ctx.rl.borrow();
-        let current_time = rl.get_time();
+        // Update the mystery ship
+        let current_time = unsafe { GetTime() };
         if current_time - self.time_last_spawned > self.mysteryship_spawn_interval {
-            self.mysteryship.spawn(self.ctx.clone());
-            self.time_last_spawned = rl.get_time();
+            self.mysteryship.spawn();
+            self.time_last_spawned = unsafe { GetTime() };
             self.mysteryship_spawn_interval =
                 rand::thread_rng().gen_range(MYSTERYSHIP_MIN_INTERVAL..MYSTERYSHIP_MAX_INTERVAL)
         }
@@ -458,125 +453,119 @@ impl Game {
     }
 
     pub fn draw(&mut self) {
-        let ctx = self.ctx.clone();
-        let mut rl = ctx.rl.borrow_mut();
-        let thread = ctx.thread.borrow();
-        let mut d = rl.begin_drawing(&thread);
-        d.clear_background(WINDOW_BKG_COLOR);
-        d.draw_rectangle_rounded_lines(
-            FRAME_RECT,
-            FRAME_ROUNDNESS,
-            FRAME_SEGMENTS,
-            FRAME_THICKNESS,
-            FRAME_COLOR,
-        );
-        d.draw_line_ex(
-            Vector2 {
-                x: GUI_LINE_X1,
-                y: GUI_LINE_Y,
-            },
-            Vector2 {
-                x: GUI_LINE_X2,
-                y: GUI_LINE_Y,
-            },
-            GUI_LINE_THICKNESS,
-            FRAME_COLOR,
-        );
-        if self.state != GameState::GameOver {
-            d.draw_text_ex(
+        unsafe {
+            BeginDrawing();
+            ClearBackground(WINDOW_BKG_COLOR);
+            DrawRectangleRoundedLinesEx(
+                FRAME_RECT,
+                FRAME_ROUNDNESS,
+                FRAME_SEGMENTS,
+                FRAME_THICKNESS,
+                FRAME_COLOR,
+            );
+            DrawLineEx(
+                Vector2 {
+                    x: GUI_LINE_X1,
+                    y: GUI_LINE_Y,
+                },
+                Vector2 {
+                    x: GUI_LINE_X2,
+                    y: GUI_LINE_Y,
+                },
+                GUI_LINE_THICKNESS,
+                FRAME_COLOR,
+            );
+            if self.state != GameState::GameOver {
+                DrawTextEx(
+                    self.assets.get_font(),
+                    rl_str!(format!("LEVEL {:0>2}", self.level).as_str()),
+                    LEVEL_POS,
+                    FONT_SIZE as f32,
+                    FONT_SPACING,
+                    FRAME_COLOR,
+                );
+            } else {
+                DrawTextEx(
+                    self.assets.get_font(),
+                    rl_str!("GAME OVER"),
+                    LEVEL_POS,
+                    FONT_SIZE as f32,
+                    FONT_SPACING,
+                    FRAME_COLOR,
+                );
+            }
+            DrawTextEx(
                 self.assets.get_font(),
-                format!("LEVEL {:0>2}", self.level).as_str(),
-                LEVEL_POS,
+                rl_str!("SCORE"),
+                GUI_SCORE_TEXT_POS,
                 FONT_SIZE as f32,
                 FONT_SPACING,
                 FRAME_COLOR,
             );
-        } else {
-            d.draw_text_ex(
+            DrawTextEx(
                 self.assets.get_font(),
-                "GAME OVER",
-                LEVEL_POS,
+                rl_str!(format!("{:0>5}", self.score).as_str()),
+                GUI_SCORE_VALUE_POS,
                 FONT_SIZE as f32,
                 FONT_SPACING,
                 FRAME_COLOR,
             );
-        }
-        d.draw_text_ex(
-            self.assets.get_font(),
-            "SCORE",
-            GUI_SCORE_TEXT_POS,
-            FONT_SIZE as f32,
-            FONT_SPACING,
-            FRAME_COLOR,
-        );
-        d.draw_text_ex(
-            self.assets.get_font(),
-            format!("{:0>5}", self.score).as_str(),
-            GUI_SCORE_VALUE_POS,
-            FONT_SIZE as f32,
-            FONT_SPACING,
-            FRAME_COLOR,
-        );
-        d.draw_text_ex(
-            self.assets.get_font(),
-            "HIGH SCORE",
-            GUI_HIGH_SCORE_TEXT_POS,
-            FONT_SIZE as f32,
-            FONT_SPACING,
-            FRAME_COLOR,
-        );
-        d.draw_text_ex(
-            self.assets.get_font(),
-            format!("{:0>5}", self.high_score).as_str(),
-            GUI_HIGH_SCORE_VALUE_POS,
-            FONT_SIZE as f32,
-            FONT_SPACING,
-            FRAME_COLOR,
-        );
+            DrawTextEx(
+                self.assets.get_font(),
+                rl_str!("HIGH SCORE"),
+                GUI_HIGH_SCORE_TEXT_POS,
+                FONT_SIZE as f32,
+                FONT_SPACING,
+                FRAME_COLOR,
+            );
+            DrawTextEx(
+                self.assets.get_font(),
+                rl_str!(format!("{:0>5}", self.high_score).as_str()),
+                GUI_HIGH_SCORE_VALUE_POS,
+                FONT_SIZE as f32,
+                FONT_SPACING,
+                FRAME_COLOR,
+            );
 
-        // DRAW OTHER OBJECTS
+            // DRAW OTHER OBJECTS
 
-        let mut x = GUI_LIVEIMG_X;
-        for _ in 0..self.lives {
-            self.spaceship.draw_at(&mut d, x, GUI_LIVEIMG_Y);
-            x += GUI_LIVEIMG_INC;
-        }
+            let mut x = GUI_LIVEIMG_X;
+            for _ in 0..self.lives {
+                self.spaceship.draw_at(x, GUI_LIVEIMG_Y);
+                x += GUI_LIVEIMG_INC;
+            }
 
-        for obstacle in self.obstacles.iter() {
-            obstacle.draw(&mut d);
-        }
-        self.spaceship.draw(&mut d);
-        for laser in self.lasers.iter_mut() {
-            laser.draw(&mut d);
-        }
+            for obstacle in self.obstacles.iter() {
+                obstacle.draw();
+            }
+            self.spaceship.draw();
+            for laser in self.lasers.iter_mut() {
+                laser.draw();
+            }
 
-        for alien in self.aliens.iter() {
-            alien.draw(&mut d);
-        }
+            for alien in self.aliens.iter() {
+                alien.draw();
+            }
 
-        for laser in self.alien_lasers.iter_mut() {
-            laser.draw(&mut d);
-        }
+            for laser in self.alien_lasers.iter_mut() {
+                laser.draw();
+            }
 
-        self.mysteryship.draw(&mut d);
+            self.mysteryship.draw();
 
-        if self.state == GameState::GameOver {
-            self.game_over_draw(&mut d);
-        }
+            if self.state == GameState::GameOver {
+                self.game_over_draw();
+            }
 
-        if self.state == GameState::LevelUp {
-            self.level_up_draw(&mut d);
+            if self.state == GameState::LevelUp {
+                self.level_up_draw();
+            }
+
+            EndDrawing();
         }
     }
 
-    fn center_text_at(
-        &mut self,
-        d: &mut RaylibDrawHandle,
-        posx: i32,
-        posy: i32,
-        width: i32,
-        text: &str,
-    ) {
+    fn center_text_at(&mut self, posx: i32, posy: i32, width: i32, text: &str) {
         const YELLOW: Color = Color {
             r: 243,
             g: 216,
@@ -584,33 +573,27 @@ impl Game {
             a: 255,
         };
 
-        let text_width = d.measure_text(text, 34);
+        let text_width = unsafe { MeasureText(rl_str!(text), 34) };
         let newx = posx + (width - text_width) / 2;
-        d.draw_text(text, newx, posy, 34, YELLOW);
+        unsafe { DrawText(rl_str!(text), newx, posy, 34, YELLOW) };
     }
 
-    fn draw_dialog_box(
-        &mut self,
-        d: &mut RaylibDrawHandle,
-        text1: &str,
-        text2: &str,
-        text3: &str,
-        color: Color,
-    ) {
+    fn draw_dialog_box(&mut self, text1: &str, text2: &str, text3: &str, color: Color) {
         const RWIDTH: i32 = 600;
         const RHEIGHT: i32 = 200;
         const RPOSX: i32 = (WORLD_WIDTH - RWIDTH) / 2;
         const RPOSY: i32 = 100;
-        d.draw_rectangle_gradient_h(RPOSX, RPOSY, RWIDTH, RHEIGHT, color, color);
-        d.draw_rectangle_lines(RPOSX, RPOSY, RWIDTH, RHEIGHT, color);
-        self.center_text_at(d, RPOSX, 150, RWIDTH, text1);
-        self.center_text_at(d, RPOSX, 190, RWIDTH, text2);
-        self.center_text_at(d, RPOSX, 230, RWIDTH, text3);
+        unsafe {
+            DrawRectangleGradientH(RPOSX, RPOSY, RWIDTH, RHEIGHT, color, color);
+            DrawRectangleLines(RPOSX, RPOSY, RWIDTH, RHEIGHT, color);
+        }
+        self.center_text_at(RPOSX, 150, RWIDTH, text1);
+        self.center_text_at(RPOSX, 190, RWIDTH, text2);
+        self.center_text_at(RPOSX, 230, RWIDTH, text3);
     }
 
-    fn level_up_draw(&mut self, d: &mut RaylibDrawHandle) {
+    fn level_up_draw(&mut self) {
         self.draw_dialog_box(
-            d,
             "CONGRATULATIONS",
             "YOU DEFEATED THE ALIENS",
             "PRESS ENTER FOR NEXT LEVEL",
@@ -618,9 +601,8 @@ impl Game {
         );
     }
 
-    fn game_over_draw(&mut self, d: &mut RaylibDrawHandle) {
+    fn game_over_draw(&mut self) {
         self.draw_dialog_box(
-            d,
             "GAME OVER",
             "PRESS ENTER TO RESTART",
             "PRESS ESC TO QUIT",

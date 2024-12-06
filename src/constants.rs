@@ -1,7 +1,19 @@
-use raylib::ffi::Color;
-use raylib::ffi::Rectangle;
-use raylib::math::Vector2;
+use ray::{Color, Rectangle, Vector2};
+use raylib_ffi as ray;
 
+// ALIEN TYPES
+pub const ALIEN1: usize = 0;
+pub const ALIEN2: usize = 1;
+pub const ALIEN3: usize = 2;
+
+// COLORS
+
+pub const COLOR_WHITE: Color = Color {
+    r: 255,
+    g: 255,
+    b: 255,
+    a: 255,
+};
 // GAME CONSTANTS
 
 pub const WINDOW_WIDTH: i32 = 750;

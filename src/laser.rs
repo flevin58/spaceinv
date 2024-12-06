@@ -1,9 +1,6 @@
 use crate::constants::*;
-use raylib::{
-    core::math::Vector2,
-    ffi::Rectangle,
-    prelude::{RaylibDraw, RaylibDrawHandle},
-};
+use ray::{Rectangle, Vector2};
+use raylib_ffi as ray;
 
 #[derive(Clone)]
 pub struct Laser {
@@ -38,8 +35,10 @@ impl Laser {
         }
     }
 
-    pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        d.draw_rectangle_v(self.position, LASER_SIZE, LASER_COLOR);
+    pub fn draw(&self) {
+        unsafe {
+            ray::DrawRectangleV(self.position, LASER_SIZE, LASER_COLOR);
+        }
     }
 
     pub fn get_rect(&self) -> Rectangle {

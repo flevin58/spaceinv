@@ -1,30 +1,56 @@
-use crate::assets::Assets;
-use crate::constants::*;
-use raylib::{
-    color::Color,
-    core::math::Vector2,
-    ffi::Rectangle,
-    misc::AsF32,
-    prelude::{RaylibDraw, RaylibDrawHandle},
-};
-use std::rc::Rc;
+use crate::constants::{self, *};
+use ray::{Texture2D, Vector2};
+use raylib_ffi as ray;
 
 pub struct Alien {
-    assets: Rc<Assets>,
+    texture: [Texture2D; 3],
     kind: usize,
-    position: Vector2,
+    position: ray::Vector2,
     active: bool,
     score: usize,
 }
 
 impl Alien {
-    pub fn new(assets: Rc<Assets>, kind: usize, position: Vector2) -> Box<Alien> {
+    pub fn new(kind: usize, position: ray::Vector2) -> Box<Alien> {
+        // Alien1
+        let alien1_data = include_bytes!("../assets/images/alien_1.png");
+        let texture1 = unsafe {
+            let alien1_image = ray::LoadImageFromMemory(
+                ray::rl_str!(".png"),
+                alien1_data.as_ptr(),
+                alien1_data.len() as i32,
+            );
+            ray::LoadTextureFromImage(alien1_image)
+        };
+
+        // Alien2
+        let alien2_data = include_bytes!("../assets/images/alien_2.png");
+        let texture2 = unsafe {
+            let alien2_image = ray::LoadImageFromMemory(
+                ray::rl_str!(".png"),
+                alien2_data.as_ptr(),
+                alien2_data.len() as i32,
+            );
+            ray::LoadTextureFromImage(alien2_image)
+        };
+
+        // Alien3
+        let alien3_data = include_bytes!("../assets/images/alien_3.png");
+        let texture3 = unsafe {
+            let alien3_image = ray::LoadImageFromMemory(
+                ray::rl_str!(".png"),
+                alien3_data.as_ptr(),
+                alien3_data.len() as i32,
+            );
+            ray::LoadTextureFromImage(alien3_image)
+        };
+
         Box::new(Alien {
-            assets,
+            texture: [texture1, texture2, texture3],
             kind,
             position,
             active: true,
-            score: ALIEN_SCORES[kind - 1],
+            score: ALIEN_SCORES[kind],
         })
     }
 
@@ -33,8 +59,7 @@ impl Alien {
     }
 
     pub fn has_overflowed_right(&self) -> bool {
-        self.position.x as i32 + self.assets.get_alien_texture(self.kind).width
-            > WINDOW_WIDTH - OFFSETX / 2
+        self.position.x as i32 + self.texture[self.kind].width > WINDOW_WIDTH - OFFSETX / 2
     }
 
     pub fn has_overflowed_left(&self) -> bool {
@@ -42,11 +67,12 @@ impl Alien {
     }
 
     pub fn get_laser_position(&self) -> Vector2 {
-        let width = self.assets.get_alien_texture(self.kind).width.as_f32();
-        let height = self.assets.get_alien_texture(self.kind).height.as_f32();
-        let laser_x = self.position.x + width / 2.;
-        let laser_y = self.position.y + height;
-        Vector2::new(laser_x, laser_y)
+        let width = self.texture[self.kind].width as f32;
+        let height = self.texture[self.kind].height as f32;
+        ray::Vector2 {
+            x: self.position.x + width / 2.,
+            y: self.position.y + height,
+        }
     }
 
     pub fn move_down(&mut self, distance: usize) {
@@ -62,23 +88,25 @@ impl Alien {
     }
 
     pub fn update(&mut self, direction: i32) {
-        self.position.x += direction.as_f32();
+        self.position.x += direction as f32;
     }
 
-    pub fn draw(&self, d: &mut RaylibDrawHandle) {
-        d.draw_texture_v(
-            self.assets.get_alien_texture(self.kind),
-            self.position,
-            Color::WHITE,
-        );
+    pub fn draw(&self) {
+        unsafe {
+            ray::DrawTextureV(
+                self.texture[self.kind],
+                self.position,
+                constants::COLOR_WHITE,
+            );
+        }
     }
 
-    pub fn get_rect(&self) -> Rectangle {
-        Rectangle {
+    pub fn get_rect(&self) -> ray::Rectangle {
+        ray::Rectangle {
             x: self.position.x,
             y: self.position.y,
-            width: self.assets.get_alien_texture(self.kind).width.as_f32(),
-            height: self.assets.get_alien_texture(self.kind).height.as_f32(),
+            width: self.texture[self.kind].width as f32,
+            height: self.texture[self.kind].height as f32,
         }
     }
 }
